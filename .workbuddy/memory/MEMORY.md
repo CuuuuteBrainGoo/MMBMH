@@ -2,6 +2,28 @@
 
 > 面向"下次打开这个项目时的我"。日常流水记在 `YYYY-MM-DD.md`，这里只放**跨会话必须遵守的硬约定**。
 
+## ⛔ 推送 GitHub 前必须跑密钥哨兵 ★（2026-09-27 少爷三次纠正后立规）
+
+**少爷原话**：「任何提交或者上传的内容之前，我都需要你先脱敏，且检查全历史是否包含敏感数据。」
+
+**动手前先跑**：
+```bash
+python F:\LottBuild\_secret_sentinel.py
+```
+必须看到 `RESULT: CLEAN` 才允许 `git push`。
+
+它扫**全部 git 历史 + 工作区**，用**形状正则**（不是人工前缀清单）。
+我在这个坑里摔过三次（真 Key → 保持形状的占位符 → 我自己的工作日志里抄真 Key），
+统一根因是「靠记清单防守」而不是「靠机制防守」。
+完整教训见 `~/.workbuddy/MEMORY.md` 第一条。
+
+**本仓库特殊注意**：
+- `.workbuddy/memory/*.md` **也在仓库里**，写复盘文档时**不许抄真实凭据**
+- GitHub 密钥扫描是**形状匹配**：占位符别保留真密钥的分段形状
+- **绝不点 GitHub 的 unblock 按钮** —— 改本地历史才是唯一正解
+- 远端仓库：`https://github.com/CuuuuteBrainGoo/MMBMH.git`
+  （git 已配 `http.proxy = http://127.0.0.1:10090`，走本机 mihomo）
+
 ## 版本号（2026-09-27 少爷指出问题后立规）
 
 **唯一来源**：`LotteryLedger/version.properties`（`versionCode` + `versionName`）。
