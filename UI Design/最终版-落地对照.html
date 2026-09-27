@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>本轮落地对照 · 3 皮肤 × 深浅色</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  /* ============================================================
+     这一页画的是「App 里实际写成什么样」，不是候选方案。
+     跟前面几页的区别：主账卡已经不是深色卡纸了 —— 少爷说
+     「墨金黑块太突兀」，所以改成了淡渐变 + 左侧金线。
+
+     六个手机不是六套配色，是 3 皮肤 × 2 深浅。所有色值都从
+     Theme.kt 里抄的，画错了对照不上代码。
+     ============================================================ */
+
+  /* ---------- 墨金账本 · 浅色（老用户原来的观感，一模一样） ---------- */
+  .mojin-light {
+    --bg:#F7F3EA; --card:#FFFCF6; --card2:#EDE6D8;
+    --ink:#1C1A16; --ink2:#5C564B; --ink3:#8A8172;
+    --outline:#CFC7B6; --primary:#1F4A3C;
+    --prize:#C0392B; --spend:#2E7D5B; --warn:#C08A2E; --expired:#7B3FA0;
+    --ballRed:#C0392B; --ballBlue:#2F6BA8; --gold:#C08A2E;
+    --chip:rgba(28,26,23,.055); --chipInk:#2A2723;
+    --heroWash:linear-gradient(135deg, rgba(31,74,60,.07), rgba(31,74,60,.02));
+  }
+  /* ---------- 墨金账本 · 深色 ---------- */
+  .mojin-dark {
+    --bg:#14120F; --card:#1C1A17; --card2:#2A2722;
+    --ink:#EAE4D8; --ink2:#B8B0A0; --ink3:#9A9288;
+    --outline:#453F36; --primary:#9CCFB9;
+    --prize:#E0503F; --spend:#4FA47C; --warn:#E0B455; --expired:#B98AE0;
+    --ballRed:#E0503F; --ballBlue:#4E8AE0; --gold:#E0B455;
+    --chip:rgba(237,231,220,.09); --chipInk:#E8E2D8;
+    --heroWash:linear-gradient(135deg, rgba(156,207,185,.07), rgba(156,207,185,.02));
+  }
+  /* ---------- 支付宝 · 浅色 ---------- */
+  .alipay-light {
+    --bg:#F5F6F8; --card:#FFFFFF; --card2:#EDEFF3;
+    --ink:#1A1A1A; --ink2:#5A6068; --ink3:#8A9099;
+    --outline:#DCE0E6; --primary:#1677FF;
+    --prize:#F5222D; --spend:#6B7280; --warn:#D48806; --expired:#7B3FA0;
+    --ballRed:#F5222D; --ballBlue:#0A4FB5; --gold:#D48806;
+    --chip:rgba(22,119,255,.078); --chipInk:#1D2129;
+    --heroWash:linear-gradient(135deg, rgba(22,119,255,.07), rgba(22,119,255,.02));
+  }
+  /* ---------- 支付宝 · 深色 ---------- */
+  .alipay-dark {
+    --bg:#14171B; --card:#1E2226; --card2:#282D33;
+    --ink:#E6EAF0; --ink2:#A3ABB6; --ink3:#8B939D;
+    --outline:#353B42; --primary:#5AA0FF;
+    --prize:#FF6B63; --spend:#9AA3AE; --warn:#E8B04A; --expired:#B98AE0;
+    --ballRed:#FF6B63; --ballBlue:#3D7BC8; --gold:#E8B04A;
+    --chip:rgba(90,160,255,.10); --chipInk:#E6EAF0;
+    --heroWash:linear-gradient(135deg, rgba(90,160,255,.07), rgba(90,160,255,.02));
+  }
+  /* ---------- 微信 · 浅色 ---------- */
+  .wechat-light {
+    --bg:#F7F7F7; --card:#FFFFFF; --card2:#EEEEEE;
+    --ink:#1F1F1F; --ink2:#5C5C5C; --ink3:#9A9A9A;
+    --outline:#DEDEDE; --primary:#07C160;
+    --prize:#F5222D; --spend:#8A8A8A; --warn:#D48806; --expired:#7B3FA0;
+    --ballRed:#F5222D; --ballBlue:#2F6BA8; --gold:#D48806;
+    --chip:rgba(7,193,96,.078); --chipInk:#1F1F1F;
+    --heroWash:linear-gradient(135deg, rgba(7,193,96,.07), rgba(7,193,96,.02));
+  }
+  /* ---------- 微信 · 深色 ---------- */
+  .wechat-dark {
+    --bg:#111111; --card:#1B1B1B; --card2:#252525;
+    --ink:#E4E4E4; --ink2:#A8A8A8; --ink3:#8C8C8C;
+    --outline:#333333; --primary:#3FD37E;
+    --prize:#FF6B63; --spend:#9E9E9E; --warn:#E8B04A; --expired:#B98AE0;
+    --ballRed:#FF6B63; --ballBlue:#4E8AE0; --gold:#E8B04A;
+    --chip:rgba(7,193,96,.10); --chipInk:#E4E4E4;
+    --heroWash:linear-gradient(135deg, rgba(63,211,126,.07), rgba(63,211,126,.02));
+  }
+
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background:#EFEBE2; color:#241F19; padding:32px 20px 60px; line-height:1.6;
+  }
+  .page { max-width:1500px; margin:0 auto; }
+  h1 { font-size:25px; letter-spacing:-.02em; margin-bottom:6px; }
+  .lead { color:#6B6357; font-size:14px; margin-bottom:8px; }
+  .note { color:#8A8172; font-size:13px; margin-bottom:28px; }
+  .note b { color:#241F19; }
+
+  .section-title {
+    font-size:16px; font-weight:700; margin:34px 0 6px;
+    padding-left:11px; border-left:4px solid #C08A2E;
+  }
+  .section-sub { font-size:13px; color:#6B6357; margin-bottom:16px; padding-left:15px; }
+
+  .grid { display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
+
+  /* 手机外壳 */
+  .phone-wrap { flex:0 0 auto; width:322px; }
+  .phone-wrap .cap { font-size:13px; font-weight:600; color:#4A4438; margin-bottom:2px; }
+  .phone-wrap .cap small { display:block; font-weight:400; color:#8A8172; font-size:11.5px; }
+  .phone {
+    margin-top:9px; width:322px; height:616px; border-radius:27px; overflow:hidden;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column;
+    box-shadow:0 10px 30px rgba(40,32,22,.13), 0 2px 6px rgba(40,32,22,.07);
+    border:1px solid rgba(0,0,0,.05);
+  }
+
+  /* 顶栏 */
+  .topbar {
+    display:flex; align-items:center; padding:11px 9px 11px 15px; gap:6px;
+    border-bottom:1px solid var(--outline);
+  }
+  .tb-title { font-size:15.5px; font-weight:600; letter-spacing:-.01em; }
+  .tb-ver { font-size:9.5px; color:var(--ink3); margin-left:5px; }
+  .tb-actions { margin-left:auto; display:flex; gap:5px; }
+  /* ★ 方案 2：38dp 圆角底片 + 图标 22dp（占容器比例变大 = 显重） */
+  .tb-btn {
+    width:38px; height:38px; border-radius:11px; background:var(--chip);
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  .tb-btn svg { width:22px; height:22px; }
+  .tb-btn.on svg { stroke:var(--primary); }
+  .tb-btn.off svg { stroke:var(--chipInk); }
+
+  .body { flex:1; overflow:hidden; padding:12px 12px 0; display:flex; flex-direction:column; gap:10px; }
+
+  /* ★ 主账卡（变体 4 最终版）：淡渐变 + 左侧金线 + 正文色大数字，不再是深色块 */
+  .hero {
+    border-radius:15px; background:var(--card2); overflow:hidden;
+    display:flex;
+  }
+  .hero-gold {
+    width:4px; flex:0 0 auto;
+    background:linear-gradient(180deg, var(--gold), rgba(192,138,46,.25));
+  }
+  .hero-in { flex:1; background:var(--heroWash); padding:14px 15px; }
+  .hero-label { font-size:10.5px; color:var(--ink2); letter-spacing:.04em; }
+  .hero-num { font-size:33px; font-weight:600; letter-spacing:-.03em; margin-top:2px; line-height:1.15; }
+  .hero-sub { font-size:10.5px; color:var(--ink2); margin-top:3px; }
+  .hero-div { height:1px; background:var(--outline); margin:12px 0 10px; opacity:.6; }
+  .hero-row { display:flex; }
+  .hero-stat { flex:1; }
+  .hero-stat .k { font-size:10px; color:var(--ink2); opacity:.75; }
+  .hero-stat .v { font-size:14px; font-weight:600; margin-top:1px; }
+
+  /* 筛选生效时多出来的一段 */
+  .hero-filter { margin-top:12px; padding-top:10px; border-top:1px solid var(--outline); }
+  .hero-filter .cap { font-size:10px; color:var(--ink2); }
+  .hero-filter .cond { font-size:9.5px; color:var(--ink3); margin-top:1px; }
+  .hero-filter .row { display:flex; margin-top:7px; }
+
+  /* 公益条 */
+  .welfare {
+    display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:11px;
+    background:rgba(192,138,46,.10); border:1px solid rgba(192,138,46,.22);
+    font-size:11.5px; color:var(--ink2);
+  }
+  .welfare b { color:var(--gold); font-size:13px; }
+
+  /* 次要指标 */
+  .tiles { display:flex; gap:9px; }
+  .tile {
+    flex:1; background:var(--card); border:1px solid var(--outline);
+    border-radius:11px; padding:9px 10px;
+  }
+  .tile .k { font-size:9.5px; color:var(--ink3); }
+  .tile .v { font-size:17px; font-weight:600; margin-top:1px; }
+  .tile .v small { font-size:9.5px; font-weight:400; color:var(--ink3); margin-left:2px; }
+  .tile.warn .v { color:var(--warn); }
+
+  /* 票卡 */
+  .ticket {
+    background:var(--card); border:1px solid var(--outline); border-radius:11px;
+    display:flex; overflow:hidden;
+  }
+  .tk-bar { width:5px; flex:0 0 auto; }
+  .tk-in { flex:1; padding:9px 11px; }
+  .tk-top { display:flex; align-items:center; gap:7px; }
+  .tk-type { font-size:11.5px; font-weight:600; }
+  .chip {
+    font-size:9px; padding:2px 7px; border-radius:5px; font-weight:500;
+  }
+  .tk-amt { margin-left:auto; font-size:13.5px; font-weight:700; }
+  .tk-meta { font-size:9.5px; color:var(--ink3); margin-top:4px; }
+
+  /* 底部 FAB */
+  .fab {
+    margin:auto 12px 14px; height:44px; border-radius:22px;
+    background:var(--primary); color:#fff;
+    display:flex; align-items:center; justify-content:center; gap:7px;
+    font-size:13.5px; font-weight:600;
+  }
+  .fab svg { width:17px; height:17px; }
+
+  /* 说明表 */
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:10px; background:#fff; border-radius:10px; overflow:hidden; }
+  th, td { padding:10px 12px; text-align:left; border-bottom:1px solid #EDE7DB; vertical-align:top; }
+  th { background:#F6F1E6; font-weight:600; font-size:12.5px; }
+  tr:last-child td { border-bottom:none; }
+  code { font-family:ui-monospace, Consolas, monospace; font-size:11.5px; background:#F3EEE3; padding:1px 5px; border-radius:4px; }
+  .swatch { display:inline-block; width:13px; height:13px; border-radius:4px; vertical-align:-2px; margin-right:5px; border:1px solid rgba(0,0,0,.08); }
+
+  .redline {
+    background:#fff; border-radius:11px; padding:14px 17px; margin-top:14px;
+    border-left:4px solid #C0392B;
+  }
+  .redline h4 { font-size:13.5px; margin-bottom:5px; color:#A8352C; }
+  .redline p { font-size:12.5px; color:#5C564B; }
+
+  @media (max-width:760px) {
+    body { padding:18px 12px 44px; }
+    .phone-wrap, .phone { width:100%; max-width:322px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>本轮落地对照 · 3 皮肤 × 深浅色</h1>
+  <p class="lead">这一页画的<b>不是候选方案，是 App 里已经写成什么样</b>。所有色值都是从 <code>Theme.kt</code> 里抄出来的，画错了就对不上代码。</p>
+  <p class="note">主账卡已经不是深色块了 —— 你说「墨金黑块太突兀」，所以改成<b>淡渐变 + 左侧一缕金线 + 正文色大数字</b>。下面六个手机都是这个新样式。</p>
+
+  <!-- ============================================================ -->
+  <div class="section-title">一、墨金账本（默认皮肤，老用户原来的观感）</div>
+  <div class="section-sub">浅色这一套跟以前<b>完全一致</b>，一个色都没动 —— 升级上来的老用户不该看到界面突然变了。</div>
+
+  <div class="grid">
+    <!-- 墨金 · 浅 -->
+    <div class="phone-wrap">
+      <div class="cap">墨金账本 · 浅色<small>默认。宣纸白打底、墨绿做骨架</small></div>
+      <div class="phone mojin-light">
+        <div class="topbar">
+          <span class="tb-title">彩票账本</span><span class="tb-ver">v1.4.1</span>
+          <div class="tb-actions">
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M7 20V10M12 20V4M17 20v-7"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8 9h7M8 13h7M8 17h4"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M19.4 14.6a1.6 1.6 0 0 0 .32 1.77l.06.06a1.94 1.94 0 1 1-2.74 2.74l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.46v.17a1.94 1.94 0 1 1-3.88 0v-.09a1.6 1.6 0 0 0-1.05-1.46 1.6 1.6 0 0 0-1.77.32l-.06.06a1.94 1.94 0 1 1-2.74-2.74l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.46-1H3.4a1.94 1.94 0 1 1 0-3.88h.09a1.6 1.6 0 0 0 1.46-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a1.94 1.94 0 1 1 2.74-2.74l.06.06a1.6 1.6 0 0 0 1.77.32h.08a1.6 1.6 0 0 0 1-1.46V3.4a1.94 1.94 0 1 1 3.88 0v.09a1.6 1.6 0 0 0 1 1.46 1.6 1.6 0 0 0 1.77-.32l.06-.06a1.94 1.94 0 1 1 2.74 2.74l-.06.06a1.6 1.6 0 0 0-.32 1.77v.08a1.6 1.6 0 0 0 1.46 1h.17a1.94 1.94 0 1 1 0 3.88h-.09a1.6 1.6 0 0 0-1.46 1z"/></svg></div>
+          </div>
+        </div>
+        <div class="body">
+          <div class="hero">
+            <div class="hero-gold"></div>
+            <div class="hero-in">
+              <div class="hero-label">净收支</div>
+              <div class="hero-num" style="color:var(--ink)">−¥1,286.00</div>
+              <div class="hero-sub">还没回本</div>
+              <div class="hero-div"></div>
+              <div class="hero-row">
+                <div class="hero-stat"><div class="k">花出去</div><div class="v">¥2,140.00</div></div>
+                <div class="hero-stat"><div class="k">中奖</div><div class="v">¥854.00</div></div>
+              </div>
+              <div class="hero-row" style="margin-top:9px">
+                <div class="hero-stat"><div class="k">已兑</div><div class="v">¥500.00</div></div>
+                <div class="hero-stat"><div class="k">待兑</div><div class="v">¥354.00</div></div>
+                <div class="hero-stat"><div class="k">过期</div><div class="v" style="color:var(--expired)">−¥70.00</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="welfare">公益贡献合计 <b>¥642.00</b>（每 2 元含 0.60 元）</div>
+
+          <div class="tiles">
+            <div class="tile"><div class="k">已入账</div><div class="v">47<small>张</small></div></div>
+            <div class="tile"><div class="k">总注数</div><div class="v">63<small>注</small></div></div>
+            <div class="tile warn"><div class="k">待开奖</div><div class="v">3<small>张</small></div></div>
+          </div>
+
+          <div class="ticket">
+            <div class="tk-bar" style="background:var(--ballRed)"></div>
+            <div class="tk-in">
+              <div class="tk-top">
+                <span class="tk-type">双色球</span>
+                <span class="chip" style="background:color-mix(in srgb, var(--prize) 15%, transparent); color:var(--prize)">已中奖待兑</span>
+                <span class="tk-amt" style="color:var(--prize)">中奖 ¥200.00</span>
+              </div>
+              <div class="tk-meta">2026118 期 · 09-22 开奖 · 2 注</div>
+            </div>
+          </div>
+
+          <div class="ticket">
+            <div class="tk-bar" style="background:var(--ballBlue)"></div>
+            <div class="tk-in">
+              <div class="tk-top">
+                <span class="tk-type">大乐透</span>
+                <span class="chip" style="background:color-mix(in srgb, var(--expired) 15%, transparent); color:var(--expired)">已过期未兑奖</span>
+                <span class="tk-amt" style="color:var(--expired)">过期 −¥70.00</span>
+              </div>
+              <div class="tk-meta">25089 期 · 07-16 开奖 · 1 注</div>
+            </div>
+          </div>
+        </div>
+        <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>录入彩票</div>
+      </div>
+    </div>
+
+    <!-- 墨金 · 深 -->
+    <div class="phone-wrap">
+      <div class="cap">墨金账本 · 深色<small>语义色整组提亮，卡片比背景亮</small></div>
+      <div class="phone mojin-dark">
+        <div class="topbar">
+          <span class="tb-title">彩票账本</span><span class="tb-ver">v1.4.1</span>
+          <div class="tb-actions">
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M7 20V10M12 20V4M17 20v-7"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8 9h7M8 13h7M8 17h4"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M19.4 14.6a1.6 1.6 0 0 0 .32 1.77l.06.06a1.94 1.94 0 1 1-2.74 2.74l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.46v.17a1.94 1.94 0 1 1-3.88 0v-.09a1.6 1.6 0 0 0-1.05-1.46 1.6 1.6 0 0 0-1.77.32l-.06.06a1.94 1.94 0 1 1-2.74-2.74l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.46-1H3.4a1.94 1.94 0 1 1 0-3.88h.09a1.6 1.6 0 0 0 1.46-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a1.94 1.94 0 1 1 2.74-2.74l.06.06a1.6 1.6 0 0 0 1.77.32h.08a1.6 1.6 0 0 0 1-1.46V3.4a1.94 1.94 0 1 1 3.88 0v.09a1.6 1.6 0 0 0 1 1.46 1.6 1.6 0 0 0 1.77-.32l.06-.06a1.94 1.94 0 1 1 2.74 2.74l-.06.06a1.6 1.6 0 0 0-.32 1.77v.08a1.6 1.6 0 0 0 1.46 1h.17a1.94 1.94 0 1 1 0 3.88h-.09a1.6 1.6 0 0 0-1.46 1z"/></svg></div>
+          </div>
+        </div>
+        <div class="body">
+          <div class="hero">
+            <div class="hero-gold"></div>
+            <div class="hero-in">
+              <div class="hero-label">净收支</div>
+              <div class="hero-num" style="color:var(--ink)">−¥1,286.00</div>
+              <div class="hero-sub">还没回本</div>
+              <div class="hero-div"></div>
+              <div class="hero-row">
+                <div class="hero-stat"><div class="k">花出去</div><div class="v">¥2,140.00</div></div>
+                <div class="hero-stat"><div class="k">中奖</div><div class="v">¥854.00</div></div>
+              </div>
+              <div class="hero-row" style="margin-top:9px">
+                <div class="hero-stat"><div class="k">已兑</div><div class="v">¥500.00</div></div>
+                <div class="hero-stat"><div class="k">待兑</div><div class="v">¥354.00</div></div>
+                <div class="hero-stat"><div class="k">过期</div><div class="v" style="color:var(--expired)">−¥70.00</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="welfare">公益贡献合计 <b>¥642.00</b>（每 2 元含 0.60 元）</div>
+
+          <div class="tiles">
+            <div class="tile"><div class="k">已入账</div><div class="v">47<small>张</small></div></div>
+            <div class="tile"><div class="k">总注数</div><div class="v">63<small>注</small></div></div>
+            <div class="tile warn"><div class="k">待开奖</div><div class="v">3<small>张</small></div></div>
+          </div>
+
+          <div class="ticket">
+            <div class="tk-bar" style="background:var(--ballRed)"></div>
+            <div class="tk-in">
+              <div class="tk-top">
+                <span class="tk-type">双色球</span>
+                <span class="chip" style="background:color-mix(in srgb, var(--prize) 18%, transparent); color:var(--prize)">已中奖待兑</span>
+                <span class="tk-amt" style="color:var(--prize)">中奖 ¥200.00</span>
+              </div>
+              <div class="tk-meta">2026118 期 · 09-22 开奖 · 2 注</div>
+            </div>
+          </div>
+
+          <div class="ticket">
+            <div class="tk-bar" style="background:var(--ballBlue)"></div>
+            <div class="tk-in">
+              <div class="tk-top">
+                <span class="tk-type">大乐透</span>
+                <span class="chip" style="background:color-mix(in srgb, var(--expired) 18%, transparent); color:var(--expired)">已过期未兑奖</span>
+                <span class="tk-amt" style="color:var(--expired)">过期 −¥70.00</span>
+              </div>
+              <div class="tk-meta">25089 期 · 07-16 开奖 · 1 注</div>
+            </div>
+          </div>
+        </div>
+        <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>录入彩票</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="section-title">二、支付宝皮肤（主色蓝）</div>
+  <div class="section-sub">支出色<b>改成灰</b>了 —— 主色是蓝，支出再留墨绿会跟蓝抢戏；灰 = 钱花掉了，语义上完全说得通。</div>
+
+  <div class="grid">
+    <div class="phone-wrap">
+      <div class="cap">支付宝 · 浅色<small>冷白底 #F5F6F8 · 主色 #1677FF</small></div>
+      <div class="phone alipay-light">
+        <div class="topbar">
+          <span class="tb-title">彩票账本</span><span class="tb-ver">v1.4.1</span>
+          <div class="tb-actions">
+            <div class="tb-btn on"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M7 20V10M12 20V4M17 20v-7"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8 9h7M8 13h7M8 17h4"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M19.4 14.6a1.6 1.6 0 0 0 .32 1.77l.06.06a1.94 1.94 0 1 1-2.74 2.74l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.46v.17a1.94 1.94 0 1 1-3.88 0v-.09a1.6 1.6 0 0 0-1.05-1.46 1.6 1.6 0 0 0-1.77.32l-.06.06a1.94 1.94 0 1 1-2.74-2.74l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.46-1H3.4a1.94 1.94 0 1 1 0-3.88h.09a1.6 1.6 0 0 0 1.46-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a1.94 1.94 0 1 1 2.74-2.74l.06.06a1.6 1.6 0 0 0 1.77.32h.08a1.6 1.6 0 0 0 1-1.46V3.4a1.94 1.94 0 1 1 3.88 0v.09a1.6 1.6 0 0 0 1 1.46 1.6 1.6 0 0 0 1.77-.32l.06-.06a1.94 1.94 0 1 1 2.74 2.74l-.06.06a1.6 1.6 0 0 0-.32 1.77v.08a1.6 1.6 0 0 0 1.46 1h.17a1.94 1.94 0 1 1 0 3.88h-.09a1.6 1.6 0 0 0-1.46 1z"/></svg></div>
+          </div>
+        </div>
+        <div class="body">
+          <div class="hero">
+            <div class="hero-gold"></div>
+            <div class="hero-in">
+              <div class="hero-label">净收支</div>
+              <div class="hero-num" style="color:var(--ink)">−¥1,286.00</div>
+              <div class="hero-sub">还没回本</div>
+              <div class="hero-div"></div>
+              <div class="hero-row">
+                <div class="hero-stat"><div class="k">花出去</div><div class="v" style="color:var(--spend)">¥2,140.00</div></div>
+                <div class="hero-stat"><div class="k">中奖</div><div class="v" style="color:var(--prize)">¥854.00</div></div>
+              </div>
+              <div class="hero-row" style="margin-top:9px">
+                <div class="hero-stat"><div class="k">已兑</div><div class="v" style="color:var(--spend)">¥500.00</div></div>
+                <div class="hero-stat"><div class="k">待兑</div><div class="v" style="color:var(--prize)">¥354.00</div></div>
+                <div class="hero-stat"><div class="k">过期</div><div class="v" style="color:var(--expired)">−¥70.00</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="tiles">
+            <div class="tile"><div class="k">已入账</div><div class="v">47<small>张</small></div></div>
+            <div class="tile"><div class="k">总注数</div><div class="v">63<small>注</small></div></div>
+            <div class="tile warn"><div class="k">待开奖</div><div class="v">3<small>张</small></div></div>
+          </div>
+          <div class="ticket">
+            <div class="tk-bar" style="background:var(--ballRed)"></div>
+            <div class="tk-in">
+              <div class="tk-top">
+                <span class="tk-type">双色球</span>
+                <span class="chip" style="background:color-mix(in srgb, var(--prize) 15%, transparent); color:var(--prize)">已中奖待兑</span>
+                <span class="tk-amt" style="color:var(--prize)">中奖 ¥200.00</span>
+              </div>
+              <div class="tk-meta">2026118 期 · 09-22 开奖 · 2 注</div>
+            </div>
+          </div>
+        </div>
+        <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>录入彩票</div>
+      </div>
+    </div>
+
+    <div class="phone-wrap">
+      <div class="cap">支付宝 · 深色<small>主色翻到 #5AA0FF，蓝球反而用更暗的</small></div>
+      <div class="phone alipay-dark">
+        <div class="topbar">
+          <span class="tb-title">彩票账本</span><span class="tb-ver">v1.4.1</span>
+          <div class="tb-actions">
+            <div class="tb-btn on"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M7 20V10M12 20V4M17 20v-7"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8 9h7M8 13h7M8 17h4"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M19.4 14.6a1.6 1.6 0 0 0 .32 1.77l.06.06a1.94 1.94 0 1 1-2.74 2.74l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.46v.17a1.94 1.94 0 1 1-3.88 0v-.09a1.6 1.6 0 0 0-1.05-1.46 1.6 1.6 0 0 0-1.77.32l-.06.06a1.94 1.94 0 1 1-2.74-2.74l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.46-1H3.4a1.94 1.94 0 1 1 0-3.88h.09a1.6 1.6 0 0 0 1.46-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a1.94 1.94 0 1 1 2.74-2.74l.06.06a1.6 1.6 0 0 0 1.77.32h.08a1.6 1.6 0 0 0 1-1.46V3.4a1.94 1.94 0 1 1 3.88 0v.09a1.6 1.6 0 0 0 1 1.46 1.6 1.6 0 0 0 1.77-.32l.06-.06a1.94 1.94 0 1 1 2.74 2.74l-.06.06a1.6 1.6 0 0 0-.32 1.77v.08a1.6 1.6 0 0 0 1.46 1h.17a1.94 1.94 0 1 1 0 3.88h-.09a1.6 1.6 0 0 0-1.46 1z"/></svg></div>
+          </div>
+        </div>
+        <div class="body">
+          <div class="hero">
+            <div class="hero-gold"></div>
+            <div class="hero-in">
+              <div class="hero-label">净收支</div>
+              <div class="hero-num" style="color:var(--ink)">−¥1,286.00</div>
+              <div class="hero-sub">还没回本</div>
+              <div class="hero-div"></div>
+              <div class="hero-row">
+                <div class="hero-stat"><div class="k">花出去</div><div class="v" style="color:var(--spend)">¥2,140.00</div></div>
+                <div class="hero-stat"><div class="k">中奖</div><div class="v" style="color:var(--prize)">¥854.00</div></div>
+              </div>
+              <div class="hero-row" style="margin-top:9px">
+                <div class="hero-stat"><div class="k">已兑</div><div class="v" style="color:var(--spend)">¥500.00</div></div>
+                <div class="hero-stat"><div class="k">待兑</div><div class="v" style="color:var(--prize)">¥354.00</div></div>
+                <div class="hero-stat"><div class="k">过期</div><div class="v" style="color:var(--expired)">−¥70.00</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="tiles">
+            <div class="tile"><div class="k">已入账</div><div class="v">47<small>张</small></div></div>
+            <div class="tile"><div class="k">总注数</div><div class="v">63<small>注</small></div></div>
+            <div class="tile warn"><div class="k">待开奖</div><div class="v">3<small>张</small></div></div>
+          </div>
+          <div class="ticket">
+            <div class="tk-bar" style="background:var(--ballRed)"></div>
+            <div class="tk-in">
+              <div class="tk-top">
+                <span class="tk-type">双色球</span>
+                <span class="chip" style="background:color-mix(in srgb, var(--prize) 18%, transparent); color:var(--prize)">已中奖待兑</span>
+                <span class="tk-amt" style="color:var(--prize)">中奖 ¥200.00</span>
+              </div>
+              <div class="tk-meta">2026118 期 · 09-22 开奖 · 2 注</div>
+            </div>
+          </div>
+        </div>
+        <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>录入彩票</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="section-title">三、微信皮肤（主色绿）</div>
+  <div class="section-sub">这里的支出色<b>必须</b>是灰 —— 主色就是绿 #07C160，支出再留绿的话「支出绿」和「按钮绿」会撞在一起，用户分不清哪个能点。</div>
+
+  <div class="grid">
+    <div class="phone-wrap">
+      <div class="cap">微信 · 浅色<small>白底 #F7F7F7 · 主色 #07C160</small></div>
+      <div class="phone wechat-light">
+        <div class="topbar">
+          <span class="tb-title">彩票账本</span><span class="tb-ver">v1.4.1</span>
+          <div class="tb-actions">
+            <div class="tb-btn on"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M7 20V10M12 20V4M17 20v-7"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8 9h7M8 13h7M8 17h4"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M19.4 14.6a1.6 1.6 0 0 0 .32 1.77l.06.06a1.94 1.94 0 1 1-2.74 2.74l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.46v.17a1.94 1.94 0 1 1-3.88 0v-.09a1.6 1.6 0 0 0-1.05-1.46 1.6 1.6 0 0 0-1.77.32l-.06.06a1.94 1.94 0 1 1-2.74-2.74l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.46-1H3.4a1.94 1.94 0 1 1 0-3.88h.09a1.6 1.6 0 0 0 1.46-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a1.94 1.94 0 1 1 2.74-2.74l.06.06a1.6 1.6 0 0 0 1.77.32h.08a1.6 1.6 0 0 0 1-1.46V3.4a1.94 1.94 0 1 1 3.88 0v.09a1.6 1.6 0 0 0 1 1.46 1.6 1.6 0 0 0 1.77-.32l.06-.06a1.94 1.94 0 1 1 2.74 2.74l-.06.06a1.6 1.6 0 0 0-.32 1.77v.08a1.6 1.6 0 0 0 1.46 1h.17a1.94 1.94 0 1 1 0 3.88h-.09a1.6 1.6 0 0 0-1.46 1z"/></svg></div>
+          </div>
+        </div>
+        <div class="body">
+          <div class="hero">
+            <div class="hero-gold"></div>
+            <div class="hero-in">
+              <div class="hero-label">净收支</div>
+              <div class="hero-num" style="color:var(--ink)">−¥1,286.00</div>
+              <div class="hero-sub">还没回本</div>
+              <div class="hero-div"></div>
+              <div class="hero-row">
+                <div class="hero-stat"><div class="k">花出去</div><div class="v" style="color:var(--spend)">¥2,140.00</div></div>
+                <div class="hero-stat"><div class="k">中奖</div><div class="v" style="color:var(--prize)">¥854.00</div></div>
+              </div>
+              <div class="hero-row" style="margin-top:9px">
+                <div class="hero-stat"><div class="k">已兑</div><div class="v" style="color:var(--spend)">¥500.00</div></div>
+                <div class="hero-stat"><div class="k">待兑</div><div class="v" style="color:var(--prize)">¥354.00</div></div>
+                <div class="hero-stat"><div class="k">过期</div><div class="v" style="color:var(--expired)">−¥70.00</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="tiles">
+            <div class="tile"><div class="k">已入账</div><div class="v">47<small>张</small></div></div>
+            <div class="tile"><div class="k">总注数</div><div class="v">63<small>注</small></div></div>
+            <div class="tile warn"><div class="k">待开奖</div><div class="v">3<small>张</small></div></div>
+          </div>
+          <div class="ticket">
+            <div class="tk-bar" style="background:var(--ballRed)"></div>
+            <div class="tk-in">
+              <div class="tk-top">
+                <span class="tk-type">双色球</span>
+                <span class="chip" style="background:color-mix(in srgb, var(--prize) 15%, transparent); color:var(--prize)">已中奖待兑</span>
+                <span class="tk-amt" style="color:var(--prize)">中奖 ¥200.00</span>
+              </div>
+              <div class="tk-meta">2026118 期 · 09-22 开奖 · 2 注</div>
+            </div>
+          </div>
+        </div>
+        <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>录入彩票</div>
+      </div>
+    </div>
+
+    <div class="phone-wrap">
+      <div class="cap">微信 · 深色<small>近黑底 #111 · 主色提亮到 #3FD37E</small></div>
+      <div class="phone wechat-dark">
+        <div class="topbar">
+          <span class="tb-title">彩票账本</span><span class="tb-ver">v1.4.1</span>
+          <div class="tb-actions">
+            <div class="tb-btn on"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M7 20V10M12 20V4M17 20v-7"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8 9h7M8 13h7M8 17h4"/></svg></div>
+            <div class="tb-btn off"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M19.4 14.6a1.6 1.6 0 0 0 .32 1.77l.06.06a1.94 1.94 0 1 1-2.74 2.74l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.46v.17a1.94 1.94 0 1 1-3.88 0v-.09a1.6 1.6 0 0 0-1.05-1.46 1.6 1.6 0 0 0-1.77.32l-.06.06a1.94 1.94 0 1 1-2.74-2.74l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.46-1H3.4a1.94 1.94 0 1 1 0-3.88h.09a1.6 1.6 0 0 0 1.46-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a1.94 1.94 0 1 1 2.74-2.74l.06.06a1.6 1.6 0 0 0 1.77.32h.08a1.6 1.6 0 0 0 1-1.46V3.4a1.94 1.94 0 1 1 3.88 0v.09a1.6 1.6 0 0 0 1 1.46 1.6 1.6 0 0 0 1.77-.32l.06-.06a1.94 1.94 0 1 1 2.74 2.74l-.06.06a1.6 1.6 0 0 0-.32 1.77v.08a1.6 1.6 0 0 0 1.46 1h.17a1.94 1.94 0 1 1 0 3.88h-.09a1.6 1.6 0 0 0-1.46 1z"/></svg></div>
+          </div>
+        </div>
+        <div class="body">
+          <div class="hero">
+            <div class="hero-gold"></div>
+            <div class="hero-in">
+              <div class="hero-label">净收支</div>
+              <div class="hero-num" style="color:var(--ink)">−¥1,286.00</div>
+              <div class="hero-sub">还没回本</div>
+              <div class="hero-div"></div>
+              <div class="hero-row">
+                <div class="hero-stat"><div class="k">花出去</div><div class="v" style="color:var(--spend)">¥2,140.00</div></div>
+                <div class="hero-stat"><div class="k">中奖</div><div class="v" style="color:var(--prize)">¥854.00</div></div>
+              </div>
+              <div class="hero-row" style="margin-top:9px">
+                <div class="hero-stat"><div class="k">已兑</div><div class="v" style="color:var(--spend)">¥500.00</div></div>
+                <div class="hero-stat"><div class="k">待兑</div><div class="v" style="color:var(--prize)">¥354.00</div></div>
+                <div class="hero-stat"><div class="k">过期</div><div class="v" style="color:var(--expired)">−¥70.00</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="tiles">
+            <div class="tile"><div class="k">已入账</div><div class="v">47<small>张</small></div></div>
+            <div class="tile"><div class="k">总注数</div><div class="v">63<small>注</small></div></div>
+            <div class="tile warn"><div class="k">待开奖</div><div class="v">3<small>张</small></div></div>
+          </div>
+          <div class="ticket">
+            <div class="tk-bar" style="background:var(--ballRed)"></div>
+            <div class="tk-in">
+              <div class="tk-top">
+                <span class="tk-type">双色球</span>
+                <span class="chip" style="background:color-mix(in srgb, var(--prize) 18%, transparent); color:var(--prize)">已中奖待兑</span>
+                <span class="tk-amt" style="color:var(--prize)">中奖 ¥200.00</span>
+              </div>
+              <div class="tk-meta">2026118 期 · 09-22 开奖 · 2 注</div>
+            </div>
+          </div>
+        </div>
+        <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>录入彩票</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="section-title">四、筛选生效时，主账上多出来的一段</div>
+  <div class="section-sub">你要的「筛选结果要反映在主账上」。做法是<b>不动大数字</b>，在下面加一段筛选后的金额。</div>
+
+  <div class="grid">
+    <div class="phone-wrap" style="width:322px">
+      <div class="cap">筛选生效 · 墨金浅色<small>条件：双色球 · 未中奖 · 近 3 个月</small></div>
+      <div class="phone mojin-light" style="height:auto">
+        <div class="body" style="padding:12px">
+          <div class="hero">
+            <div class="hero-gold"></div>
+            <div class="hero-in">
+              <div class="hero-label">净收支</div>
+              <div class="hero-num" style="color:var(--ink)">−¥1,286.00</div>
+              <div class="hero-sub">还没回本</div>
+              <div class="hero-div"></div>
+              <div class="hero-row">
+                <div class="hero-stat"><div class="k">花出去</div><div class="v">¥2,140.00</div></div>
+                <div class="hero-stat"><div class="k">中奖</div><div class="v">¥854.00</div></div>
+              </div>
+
+              <div class="hero-filter">
+                <div class="cap">当前筛选 · 9 张</div>
+                <div class="cond">双色球 · 未中奖 · 近 3 个月</div>
+                <div class="row">
+                  <div class="hero-stat"><div class="k">花出去</div><div class="v">¥180.00</div></div>
+                  <div class="hero-stat"><div class="k">中奖</div><div class="v">¥0.00</div></div>
+                  <div class="hero-stat"><div class="k">净收支</div><div class="v">−¥180.00</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1; min-width:340px">
+      <table>
+        <tr><th style="width:150px">项</th><th>做法</th></tr>
+        <tr>
+          <td><b>大数字不动</b></td>
+          <td>它永远是<b>全部账</b>。天天看的基准数字跟着筛选漂移，用户今天看到 −1286、筛一下变成 −180，第一反应是「我记错账了」，而不是「哦这是筛过的」。</td>
+        </tr>
+        <tr>
+          <td><b>多一段筛选金额</b></td>
+          <td>分隔线下面另起一段：<code>当前筛选 · N 张</code> + 条件摘要 + 三个数（花出去 / 中奖 / 净收支）。<b>净收支带正负号</b>，因为它要跟上面的大数字对照看，不带号的话 <code>180</code> 和 <code>−180</code> 长得一样。</td>
+        </tr>
+        <tr>
+          <td><b>没筛选就不显示</b></td>
+          <td>那段整个不渲染 —— 平时多一行「当前筛选 · 47 张」纯属噪音。</td>
+        </tr>
+        <tr>
+          <td><b>颜色</b></td>
+          <td>这一段的金额用<b>正文色</b>，不用语义色。它跟主数字是一家人，涂成红红绿绿反而分不清哪个是"总账"哪个是"筛选结果"。</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="section-title">五、三条红线（皮肤不许碰）</div>
+
+  <div class="redline">
+    <h4>1. 中奖永远是红</h4>
+    <p>中国习惯红 = 涨 = 有收获。<b>「跟随系统」也不改这一条</b> —— 三套皮肤、两种深浅，中奖色都在红系里选，没有一个走绿。</p>
+  </div>
+  <div class="redline">
+    <h4>2. 过期永远是紫</h4>
+    <p>紫 = 白扔的钱。<span class="swatch" style="background:#7B3FA0"></span>浅色 #7B3FA0 ／ <span class="swatch" style="background:#B98AE0"></span>深色 #B98AE0。而且<b>必须带负号</b>（<code>过期 −¥70.00</code>），不带号跟「已兑/待兑」并排会被当成资产。</p>
+  </div>
+  <div class="redline">
+    <h4>3. 号码球红球红、蓝球蓝</h4>
+    <p>这是彩票规则，不是审美。四套配色里唯一"撞色也不改"的就是号码球 —— 比如支付宝深色下主色是亮蓝，蓝球反而<b>往暗调</b>，就为了跟主色拉开。</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="section-title">六、「跟随系统」改成了真功能</div>
+  <div class="section-sub">你说「不能只做成一个按钮」—— 确实，光有按钮不够，得让它真的动起来。</div>
+
+  <table>
+    <tr><th style="width:200px">问题</th><th>修法</th></tr>
+    <tr>
+      <td><b>系统切深浅色会重建界面</b></td>
+      <td>Android 在系统切深浅色时会<b>重建整个界面</b>。原来页面位置用 <code>remember</code> 存的，一重建就丢 —— 你在设置页点系统开关，会被直接弹回首页，看起来像 bug。改成 <code>rememberSaveable</code>：现在切完还留在设置页。</td>
+    </tr>
+    <tr>
+      <td><b>看不到它到底生效没</b></td>
+      <td>设置页「深浅色」那行现在显示 <b>「深色（当前生效）」</b>，选「跟随系统」时下面再加一句「你的手机现在是深色模式，去手机显示设置切换，这个 App 会跟着一起变」。改完系统开关回到这页，当场能验证。</td>
+    </tr>
+    <tr>
+      <td><b>默认值</b></td>
+      <td>默认仍是<b>跟随系统</b>。老用户升级上来，行为跟以前一模一样。</td>
+    </tr>
+  </table>
+
+</div>
+</body>
+</html>

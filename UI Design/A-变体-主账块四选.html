@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方案 A 变体 · 主账块的四处理法</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  :root {
+    --paper:   #F7F3EA;
+    --paper-2: #FFFDF8;
+    --ink:     #1C1A17;
+    --ink-2:   #5A544B;
+    --ink-3:   #8F887C;
+    --line:    #E2DBCB;
+
+    --prize:   #C0392B;
+    --spend:   #2E7D5B;
+    --warn:    #C08A2E;
+    --expired: #7B3FA0;
+
+    --ball-red:  #C0392B;
+    --ball-blue: #2C6FB5;
+  }
+
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background:#EDE7DA; color:var(--ink);
+    padding:32px 20px 70px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+
+  .page-title { text-align:center; margin-bottom:7px; font-size:23px; font-weight:600; letter-spacing:.4px; }
+  .page-sub { text-align:center; margin-bottom:30px; font-size:13px; color:#6B6357; line-height:1.75; max-width:680px; }
+
+  .row { display:flex; gap:26px; flex-wrap:wrap; justify-content:center; align-items:flex-start; margin-bottom:12px; }
+
+  .col { display:flex; flex-direction:column; gap:13px; align-items:center; }
+
+  .phone {
+    width:344px; background:var(--paper);
+    border-radius:30px; border:1px solid #D8D0BF;
+    overflow:hidden; display:flex; flex-direction:column;
+    box-shadow: 0 10px 34px rgba(60,50,35,.13);
+  }
+  .phone-label {
+    text-align:center; font-size:12px; font-weight:600; color:#7A7266;
+    padding:12px 0 10px; letter-spacing:.6px; background:#E5DECD;
+    border-bottom:1px solid #D8D0BF;
+  }
+  .phone-label b { color:#4A4439; }
+
+  .statusbar {
+    height:30px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 18px; font-size:11px; color:var(--ink-2); font-weight:500;
+  }
+  .topbar { display:flex; align-items:center; gap:10px; padding:4px 16px 14px; }
+  .topbar h1 { font-size:19px; font-weight:600; letter-spacing:.3px; }
+  .topbar .ver { font-size:10px; color:var(--ink-3); font-weight:400; }
+  .topbar .spacer { flex:1; }
+  .icon-btn {
+    width:32px; height:32px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--ink-2); position:relative; font-size:14px;
+  }
+  .badge-dot {
+    position:absolute; top:-1px; right:-2px; min-width:15px; height:15px; padding:0 4px;
+    border-radius:8px; background:var(--prize); color:#fff;
+    font-size:9px; line-height:15px; text-align:center; font-weight:600;
+  }
+
+  .body { padding:0 14px 20px; display:flex; flex-direction:column; gap:11px; }
+
+  /* ===== 主账通用 ===== */
+  .hero-label { font-size:11px; color:var(--ink-3); letter-spacing:1.4px; margin-bottom:8px; }
+  .hero-num {
+    font-size:42px; font-weight:700; letter-spacing:-1.2px; line-height:1;
+    font-variant-numeric:tabular-nums;
+  }
+  .hero-num .cur { font-size:22px; font-weight:500; opacity:.75; margin-right:2px; }
+  .hero-row { display:flex; gap:6px; }
+  .hero-cell { flex:1; }
+  .hero-cell .k { font-size:10px; margin-bottom:4px; letter-spacing:.4px; }
+  .hero-cell .v { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
+
+  /* ---------- 变体 1：完全保留（原 A） ---------- */
+  .v1 {
+    background: linear-gradient(160deg,#211E1A 0%,#17150F 100%);
+    border-radius:20px; padding:20px 20px 18px; color:#F2EDE3;
+    position:relative; overflow:hidden;
+  }
+  .v1::after {
+    content:''; position:absolute; top:-70px; right:-50px;
+    width:190px; height:190px; border-radius:50%;
+    background: radial-gradient(circle, rgba(192,138,46,.22) 0%, rgba(192,138,46,0) 70%);
+  }
+  .v1 .hero-label { color:#9A9285; }
+  .v1 .hero-num.neg { color:#5FD3A0; }
+  .v1 .dv { height:1px; background:rgba(255,255,255,.10); margin:16px 0 13px; }
+  .v1 .hero-cell .k { color:#9A9285; }
+  .v1 .v-spend{color:#7FCBA8} .v1 .v-prize{color:#FF8574} .v1 .v-gold{color:#E0B45C} .v1 .v-purple{color:#C39BE0}
+
+  /* ---------- 变体 2：墨块改「描边 + 极浅底」 ---------- */
+  .v2 {
+    background: #FBF7EE;
+    border: 1.5px solid #2A2520;
+    border-radius:20px; padding:20px 20px 18px;
+    position:relative;
+  }
+  .v2 .hero-label { color:#8F887C; }
+  .v2 .hero-num { color:#1C1A17; }
+  .v2 .hero-num.neg { color:var(--spend); }
+  .v2 .dv { height:1px; background:#E5DDCB; margin:16px 0 13px; }
+  .v2 .hero-cell .k { color:#8F887C; }
+  .v2 .v-spend{color:var(--spend)} .v2 .v-prize{color:var(--prize)} .v2 .v-gold{color:var(--warn)} .v2 .v-purple{color:var(--expired)}
+  /* 左上角一枚小印章，替代原来的暗金弧光 */
+  .v2::before {
+    content:'账'; position:absolute; top:14px; right:16px;
+    width:30px; height:30px; border-radius:7px;
+    border:1.5px solid rgba(192,57,43,.42); color:rgba(192,57,43,.60);
+    font-size:14px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* ---------- 变体 3：墨块缩小成「顶部色带」 ---------- */
+  .v3 {
+    background:#FBF7EE; border:1px solid #E2DBCB; border-radius:20px;
+    overflow:hidden;
+  }
+  .v3-band {
+    background: linear-gradient(120deg,#211E1A 0%,#2E2822 100%);
+    color:#F2EDE3; padding:12px 20px;
+    display:flex; align-items:center; gap:9px;
+  }
+  .v3-band .lb { font-size:10.5px; color:#9A9285; letter-spacing:1.2px; }
+  .v3-band .hl { margin-left:auto; font-size:12px; font-weight:600; color:#E0B45C; }
+  .v3-body { padding:17px 20px 16px; }
+  .v3 .hero-num { color:#1C1A17; }
+  .v3 .hero-num.neg { color:var(--spend); }
+  .v3 .dv { height:1px; background:#E5DDCB; margin:15px 0 12px; }
+  .v3 .hero-cell .k { color:#8F887C; }
+  .v3 .v-spend{color:var(--spend)} .v3 .v-prize{color:var(--prize)} .v3 .v-gold{color:var(--warn)} .v3 .v-purple{color:var(--expired)}
+
+  /* ---------- 变体 4：纸感「深色卡纸」 ---------- */
+  .v4 {
+    background:#2A2520;
+    border-radius:20px; padding:20px 20px 18px;
+    color:#EDE6D8;
+    /* 用极细纹路做纸感，不用渐变噪点 */
+    background-image:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.012) 0 2px, transparent 2px 4px);
+    position:relative;
+  }
+  .v4::after {
+    content:''; position:absolute; inset:7px; border-radius:14px;
+    border:1px solid rgba(237,230,216,.10);
+    pointer-events:none;
+  }
+  .v4 .hero-label { color:#A29A8C; }
+  .v4 .hero-num.neg { color:#6FD9A8; }
+  .v4 .dv { height:1px; background:rgba(237,230,216,.11); margin:16px 0 13px; }
+  .v4 .hero-cell .k { color:#A29A8C; }
+  .v4 .v-spend{color:#7FCBA8} .v4 .v-prize{color:#FF8574} .v4 .v-gold{color:#E0B45C} .v4 .v-purple{color:#C39BE0}
+
+  /* ===== 其余部分（四套共用，与 A 一致） ===== */
+  .welfare {
+    display:flex; align-items:center; gap:8px;
+    background:rgba(192,138,46,.10); border:1px solid rgba(192,138,46,.22);
+    border-radius:12px; padding:9px 12px; font-size:11px; color:#8A6420;
+  }
+  .welfare .strong { font-weight:600; }
+
+  .metrics { display:flex; gap:8px; }
+  .metric {
+    flex:1; background:var(--paper-2); border:1px solid var(--line);
+    border-radius:13px; padding:11px 12px;
+  }
+  .metric .k { font-size:10px; color:var(--ink-3); margin-bottom:5px; }
+  .metric .v { font-size:17px; font-weight:600; font-variant-numeric:tabular-nums; }
+
+  .banner {
+    display:flex; align-items:center; gap:9px;
+    background:var(--paper-2); border:1px solid var(--line);
+    border-left:3px solid var(--prize);
+    border-radius:11px; padding:10px 12px; font-size:11.5px; color:var(--ink-2);
+  }
+  .banner .go { margin-left:auto; font-size:11px; font-weight:600; color:var(--spend); white-space:nowrap; }
+
+  .sec-head { display:flex; align-items:baseline; gap:8px; margin-top:3px; }
+  .sec-head h2 { font-size:14px; font-weight:600; }
+  .sec-head .count { font-size:11px; color:var(--ink-3); }
+
+  .ticket {
+    background:var(--paper-2); border:1px solid var(--line);
+    border-radius:14px; padding:13px 14px 13px 18px;
+    position:relative; overflow:hidden;
+  }
+  .ticket::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--ball-red); }
+  .ticket.dlt::before { background:var(--ball-blue); }
+  .ticket-top { display:flex; align-items:center; gap:7px; margin-bottom:9px; }
+  .type-tag { font-size:11px; font-weight:600; padding:2.5px 8px; border-radius:6px; background:rgba(192,57,43,.10); color:var(--prize); }
+  .ticket.dlt .type-tag { background:rgba(44,111,181,.10); color:var(--ball-blue); }
+  .issue { font-size:11.5px; color:var(--ink-2); font-variant-numeric:tabular-nums; }
+  .status-tag { margin-left:auto; font-size:10px; font-weight:600; padding:3px 8px; border-radius:20px; }
+  .st-pending { background:rgba(192,138,46,.13); color:var(--warn); }
+  .st-won     { background:rgba(192,57,43,.12); color:var(--prize); }
+  .ticket-meta { font-size:11px; color:var(--ink-3); margin-bottom:10px; }
+  .balls { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:11px; }
+  .ball {
+    width:24px; height:24px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11.5px; font-weight:600; color:#fff;
+    background:var(--ball-red); font-variant-numeric:tabular-nums;
+  }
+  .ball.blue { background:var(--ball-blue); }
+  .ticket-bottom {
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding-top:9px; border-top:1px dashed var(--line);
+  }
+  .ticket-bottom .label { font-size:10.5px; color:var(--ink-3); }
+  .amount { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.4px; }
+  .amt-won { color:var(--prize); }
+  .amt-none { color:var(--ink-3); font-weight:500; font-size:14px; }
+
+  .fab {
+    margin:4px 14px 14px; height:48px; border-radius:15px;
+    background:linear-gradient(160deg,#2A2520 0%,#1A1712 100%); color:#F2EDE3;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    font-size:14.5px; font-weight:600; letter-spacing:.4px;
+  }
+
+  /* —— 注释块 —— */
+  .annot {
+    max-width:344px; width:100%;
+    background:#FFFDF8; border:1px solid #DED6C6; border-radius:16px;
+    padding:16px 18px;
+  }
+  .annot h3 { font-size:14px; font-weight:600; margin-bottom:8px; }
+  .annot p { font-size:11.5px; color:#5F584D; line-height:1.7; margin-bottom:7px; }
+  .annot .tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+  .tag { font-size:10px; font-weight:600; padding:3px 8px; border-radius:20px; }
+  .tag.good { background:rgba(46,125,91,.12); color:var(--spend); }
+  .tag.bad  { background:rgba(176,73,47,.12); color:#B0492F; }
+  .tag.mid  { background:rgba(192,138,46,.13); color:#8A6420; }
+
+  .foot {
+    max-width:1000px; width:100%; margin-top:34px;
+    background:#FFFDF8; border:1px solid #DED6C6; border-radius:18px;
+    padding:24px 26px; font-size:13px; line-height:1.8; color:#4A4439;
+  }
+  .foot h3 { font-size:15px; font-weight:600; margin-bottom:12px; color:#1C1A17; }
+  .foot ul { padding-left:20px; }
+  .foot li { margin-bottom:8px; }
+  .foot b { color:#1C1A17; }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">方案 A 变体 · 主账块怎么处理</h1>
+<p class="page-sub">
+  方向定了墨金账本，只剩一个问题：右上角那块深墨怎么才能不突兀。<br>
+  四种处理法<b>保持 A 的全部配色和下方所有卡片不变</b>，只改主账那一块。往下滚看四种的对比说明。
+</p>
+
+<div class="row">
+
+  <!-- ========== 变体 1 ========== -->
+  <div class="col">
+    <div class="phone">
+      <div class="phone-label"><b>变体 1</b> · 现在的样子（整块深墨）</div>
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ ▮</span></div>
+      <div class="topbar">
+        <h1>彩票账本<span class="ver">v1.4.1</span></h1>
+        <div class="spacer"></div>
+        <div class="icon-btn">☰<span class="badge-dot">2</span></div>
+        <div class="icon-btn">▤</div>
+        <div class="icon-btn">⚙</div>
+      </div>
+      <div class="body">
+
+        <div class="v1">
+          <div class="hero-label">净 收 支</div>
+          <div class="hero-num neg"><span class="cur">−¥</span>483.00</div>
+          <div class="dv"></div>
+          <div class="hero-row">
+            <div class="hero-cell"><div class="k">花出去</div><div class="v v-spend">¥1,240.00</div></div>
+            <div class="hero-cell"><div class="k">中奖</div><div class="v v-prize">¥757.00</div></div>
+          </div>
+          <div class="dv"></div>
+          <div class="hero-row">
+            <div class="hero-cell"><div class="k">已兑</div><div class="v v-gold">¥520.00</div></div>
+            <div class="hero-cell"><div class="k">待兑</div><div class="v v-gold">¥237.00</div></div>
+            <div class="hero-cell"><div class="k">过期</div><div class="v v-purple">−¥80.00</div></div>
+          </div>
+        </div>
+
+        <div class="welfare"><span>公益金</span><span class="strong">¥446.40</span><span style="opacity:.7">· 票面的 36%</span></div>
+        <div class="metrics">
+          <div class="metric"><div class="k">已入账</div><div class="v">23</div></div>
+          <div class="metric"><div class="k">总注数</div><div class="v">46</div></div>
+          <div class="metric"><div class="k">待开奖</div><div class="v" style="color:var(--warn)">3</div></div>
+        </div>
+        <div class="banner"><span>2 张票中了奖，去确认金额</span><span class="go">去处理 ›</span></div>
+        <div class="sec-head"><h2>购彩记录</h2><span class="count">共 23 张</span></div>
+        <div class="ticket">
+          <div class="ticket-top"><span class="type-tag">双色球</span><span class="issue">26104 期</span><span class="status-tag st-won">中奖</span></div>
+          <div class="ticket-meta">开奖 2026-09-26 · 2 注 × 3 倍</div>
+          <div class="balls">
+            <span class="ball">03</span><span class="ball">12</span><span class="ball">18</span>
+            <span class="ball">25</span><span class="ball">29</span><span class="ball">33</span><span class="ball blue">07</span>
+          </div>
+          <div class="ticket-bottom"><span class="label">中奖金额</span><span class="amount amt-won">¥ 300.00</span></div>
+        </div>
+      </div>
+      <div class="fab">＋ 录入彩票</div>
+    </div>
+    <div class="annot">
+      <h3>变体 1 · 整块深墨（现状）</h3>
+      <p>墨块直接贴在宣纸底上，两块颜色硬碰硬，边界非常清楚——这就是你说的「突兀」。</p>
+      <p>它的问题不是不好看，是<b>像个外来物</b>：周围的卡片都是浅色圆角，只有它一个又黑又大，看起来像盖在页面上的另一层东西。</p>
+      <div class="tags"><span class="tag bad">边界生硬</span><span class="tag bad">像异物</span></div>
+    </div>
+  </div>
+
+  <!-- ========== 变体 2 ========== -->
+  <div class="col">
+    <div class="phone">
+      <div class="phone-label"><b>变体 2</b> · 只留描边，纸底不变</div>
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ ▮</span></div>
+      <div class="topbar">
+        <h1>彩票账本<span class="ver">v1.4.1</span></h1>
+        <div class="spacer"></div>
+        <div class="icon-btn">☰<span class="badge-dot">2</span></div>
+        <div class="icon-btn">▤</div>
+        <div class="icon-btn">⚙</div>
+      </div>
+      <div class="body">
+
+        <div class="v2">
+          <div class="hero-label">净 收 支</div>
+          <div class="hero-num neg"><span class="cur">−¥</span>483.00</div>
+          <div class="dv"></div>
+          <div class="hero-row">
+            <div class="hero-cell"><div class="k">花出去</div><div class="v v-spend">¥1,240.00</div></div>
+            <div class="hero-cell"><div class="k">中奖</div><div class="v v-prize">¥757.00</div></div>
+          </div>
+          <div class="dv"></div>
+          <div class="hero-row">
+            <div class="hero-cell"><div class="k">已兑</div><div class="v v-gold">¥520.00</div></div>
+            <div class="hero-cell"><div class="k">待兑</div><div class="v v-gold">¥237.00</div></div>
+            <div class="hero-cell"><div class="k">过期</div><div class="v v-purple">−¥80.00</div></div>
+          </div>
+        </div>
+
+        <div class="welfare"><span>公益金</span><span class="strong">¥446.40</span><span style="opacity:.7">· 票面的 36%</span></div>
+        <div class="metrics">
+          <div class="metric"><div class="k">已入账</div><div class="v">23</div></div>
+          <div class="metric"><div class="k">总注数</div><div class="v">46</div></div>
+          <div class="metric"><div class="k">待开奖</div><div class="v" style="color:var(--warn)">3</div></div>
+        </div>
+        <div class="banner"><span>2 张票中了奖，去确认金额</span><span class="go">去处理 ›</span></div>
+        <div class="sec-head"><h2>购彩记录</h2><span class="count">共 23 张</span></div>
+        <div class="ticket">
+          <div class="ticket-top"><span class="type-tag">双色球</span><span class="issue">26104 期</span><span class="status-tag st-won">中奖</span></div>
+          <div class="ticket-meta">开奖 2026-09-26 · 2 注 × 3 倍</div>
+          <div class="balls">
+            <span class="ball">03</span><span class="ball">12</span><span class="ball">18</span>
+            <span class="ball">25</span><span class="ball">29</span><span class="ball">33</span><span class="ball blue">07</span>
+          </div>
+          <div class="ticket-bottom"><span class="label">中奖金额</span><span class="amount amt-won">¥ 300.00</span></div>
+        </div>
+      </div>
+      <div class="fab">＋ 录入彩票</div>
+    </div>
+    <div class="annot">
+      <h3>变体 2 · 只留深色描边</h3>
+      <p>去掉整块填色，改成比周围卡片粗一点的墨色边框。边界问题<b>彻底消失</b>——因为它和背景是同一张纸了。</p>
+      <p>数字回到墨黑，靠<b>字号和字重</b>（42px/700）压住场子，而不是靠底色。右上角加一枚「账」字小印代替原来的暗金弧光，保留一点仪式感。</p>
+      <div class="tags"><span class="tag good">不突兀</span><span class="tag good">最像账本</span><span class="tag mid">没有深色块</span></div>
+    </div>
+  </div>
+
+  <!-- ========== 变体 3 ========== -->
+  <div class="col">
+    <div class="phone">
+      <div class="phone-label"><b>变体 3</b> · 墨块缩成顶部色带</div>
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ ▮</span></div>
+      <div class="topbar">
+        <h1>彩票账本<span class="ver">v1.4.1</span></h1>
+        <div class="spacer"></div>
+        <div class="icon-btn">☰<span class="badge-dot">2</span></div>
+        <div class="icon-btn">▤</div>
+        <div class="icon-btn">⚙</div>
+      </div>
+      <div class="body">
+
+        <div class="v3">
+          <div class="v3-band">
+            <span class="lb">净 收 支</span>
+            <span class="hl">亏 ¥483.00</span>
+          </div>
+          <div class="v3-body">
+            <div class="hero-num neg"><span class="cur">−¥</span>483.00</div>
+            <div class="dv"></div>
+            <div class="hero-row">
+              <div class="hero-cell"><div class="k">花出去</div><div class="v v-spend">¥1,240.00</div></div>
+              <div class="hero-cell"><div class="k">中奖</div><div class="v v-prize">¥757.00</div></div>
+            </div>
+            <div class="dv"></div>
+            <div class="hero-row">
+              <div class="hero-cell"><div class="k">已兑</div><div class="v v-gold">¥520.00</div></div>
+              <div class="hero-cell"><div class="k">待兑</div><div class="v v-gold">¥237.00</div></div>
+              <div class="hero-cell"><div class="k">过期</div><div class="v v-purple">−¥80.00</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="welfare"><span>公益金</span><span class="strong">¥446.40</span><span style="opacity:.7">· 票面的 36%</span></div>
+        <div class="metrics">
+          <div class="metric"><div class="k">已入账</div><div class="v">23</div></div>
+          <div class="metric"><div class="k">总注数</div><div class="v">46</div></div>
+          <div class="metric"><div class="k">待开奖</div><div class="v" style="color:var(--warn)">3</div></div>
+        </div>
+        <div class="banner"><span>2 张票中了奖，去确认金额</span><span class="go">去处理 ›</span></div>
+        <div class="sec-head"><h2>购彩记录</h2><span class="count">共 23 张</span></div>
+        <div class="ticket">
+          <div class="ticket-top"><span class="type-tag">双色球</span><span class="issue">26104 期</span><span class="status-tag st-won">中奖</span></div>
+          <div class="ticket-meta">开奖 2026-09-26 · 2 注 × 3 倍</div>
+          <div class="balls">
+            <span class="ball">03</span><span class="ball">12</span><span class="ball">18</span>
+            <span class="ball">25</span><span class="ball">29</span><span class="ball">33</span><span class="ball blue">07</span>
+          </div>
+          <div class="ticket-bottom"><span class="label">中奖金额</span><span class="amount amt-won">¥ 300.00</span></div>
+        </div>
+      </div>
+      <div class="fab">＋ 录入彩票</div>
+    </div>
+    <div class="annot">
+      <h3>变体 3 · 墨色收成一条顶带</h3>
+      <p>把整块墨压成<b>一条窄带</b>放在卡片顶部，墨的用量减到约 1/6。剩下的部分是纸底。</p>
+      <p>顶带里放「净收支 · 亏 ¥483.00」的<b>一句话结论</b>，下面还是大数字。这样墨色还在（保留气质），但面积小了就不再是黑枕头。</p>
+      <div class="tags"><span class="tag good">保留墨色</span><span class="tag good">过渡自然</span><span class="tag mid">信息略重复</span></div>
+    </div>
+  </div>
+
+  <!-- ========== 变体 4 ========== -->
+  <div class="col">
+    <div class="phone">
+      <div class="phone-label"><b>变体 4</b> · 深色卡纸 + 内嵌细线</div>
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ ▮</span></div>
+      <div class="topbar">
+        <h1>彩票账本<span class="ver">v1.4.1</span></h1>
+        <div class="spacer"></div>
+        <div class="icon-btn">☰<span class="badge-dot">2</span></div>
+        <div class="icon-btn">▤</div>
+        <div class="icon-btn">⚙</div>
+      </div>
+      <div class="body">
+
+        <div class="v4">
+          <div class="hero-label">净 收 支</div>
+          <div class="hero-num neg"><span class="cur">−¥</span>483.00</div>
+          <div class="dv"></div>
+          <div class="hero-row">
+            <div class="hero-cell"><div class="k">花出去</div><div class="v v-spend">¥1,240.00</div></div>
+            <div class="hero-cell"><div class="k">中奖</div><div class="v v-prize">¥757.00</div></div>
+          </div>
+          <div class="dv"></div>
+          <div class="hero-row">
+            <div class="hero-cell"><div class="k">已兑</div><div class="v v-gold">¥520.00</div></div>
+            <div class="hero-cell"><div class="k">待兑</div><div class="v v-gold">¥237.00</div></div>
+            <div class="hero-cell"><div class="k">过期</div><div class="v v-purple">−¥80.00</div></div>
+          </div>
+        </div>
+
+        <div class="welfare"><span>公益金</span><span class="strong">¥446.40</span><span style="opacity:.7">· 票面的 36%</span></div>
+        <div class="metrics">
+          <div class="metric"><div class="k">已入账</div><div class="v">23</div></div>
+          <div class="metric"><div class="k">总注数</div><div class="v">46</div></div>
+          <div class="metric"><div class="k">待开奖</div><div class="v" style="color:var(--warn)">3</div></div>
+        </div>
+        <div class="banner"><span>2 张票中了奖，去确认金额</span><span class="go">去处理 ›</span></div>
+        <div class="sec-head"><h2>购彩记录</h2><span class="count">共 23 张</span></div>
+        <div class="ticket">
+          <div class="ticket-top"><span class="type-tag">双色球</span><span class="issue">26104 期</span><span class="status-tag st-won">中奖</span></div>
+          <div class="ticket-meta">开奖 2026-09-26 · 2 注 × 3 倍</div>
+          <div class="balls">
+            <span class="ball">03</span><span class="ball">12</span><span class="ball">18</span>
+            <span class="ball">25</span><span class="ball">29</span><span class="ball">33</span><span class="ball blue">07</span>
+          </div>
+          <div class="ticket-bottom"><span class="label">中奖金额</span><span class="amount amt-won">¥ 300.00</span></div>
+        </div>
+      </div>
+      <div class="fab">＋ 录入彩票</div>
+    </div>
+    <div class="annot">
+      <h3>变体 4 · 深色纸卡（内缩一圈细线）</h3>
+      <p>仍然是整块深色，但<b>去掉右下角那个亮弧光</b>、改成内缩一圈极细的浅色线，让它看起来像一张<b>深色卡纸</b>摆在纸上，而不是一个发光的黑块。</p>
+      <p>文案从纯黑放宽到暖灰（#2A2520），和宣纸是同色系、只是深浅不同——这就是它不突兀的原因。</p>
+      <div class="tags"><span class="tag good">保留深色</span><span class="tag good">更有质感</span><span class="tag mid">仍是深色块</span></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">
+  <h3>四种的差别，一句话概括</h3>
+  <ul>
+    <li><b>变体 2（只留描边）</b>——最彻底地解决问题：不让任何深色块出现，靠字号压场。
+      最像一本账、最不突兀，代价是失去了「深色块」这个视觉锚点。</li>
+    <li><b>变体 3（墨色顶带）</b>——折中方案：墨还在，但面积从整块缩成一条。
+      我的推荐，因为它在「保留气质」和「不突兀」之间找到了平衡点。</li>
+    <li><b>变体 4（深色纸卡）</b>——如果你就是喜欢那个深色块的重量感，这是最好的做法。
+      关键改动是<b>去掉弧光、加内嵌细线、底色从纯黑改暖黑</b>，让它融入纸的世界。</li>
+  </ul>
+
+  <h3 style="margin-top:20px">为什么变体 1 会突兀 —— 具体原因</h3>
+  <ul>
+    <li><b>色差太大：</b>宣纸底是 <code>#F7F3EA</code>（很亮的暖白），墨块是 <code>#17150F</code>（近黑）。
+      中间没有任何过渡，边界就是硬切。</li>
+    <li><b>它是页面上唯一的大色块：</b>下面的卡片全是浅色 + 细边框，视觉重量都很轻。
+      唯独这块又黑又重，比例失衡。</li>
+    <li><b>那颗暗金弧光加重了异物感：</b>弧光是「浮在表面」的信号，
+      让墨块看起来像贴图而不是页面的一部分。</li>
+  </ul>
+
+  <h3 style="margin-top:20px">也可以再混</h3>
+  <ul>
+    <li>比如：<b>变体 3 的墨色顶带 + 变体 2 的「账」字小印</b>，
+      或者 <b>变体 4 的深色纸卡 + 变体 3 窄一点的高度</b>。</li>
+    <li>告诉我你选哪个（或怎么混），我就把整套 A 方案按这个改定，再往 App 里落。</li>
+  </ul>
+</div>
+
+</body>
+</html>

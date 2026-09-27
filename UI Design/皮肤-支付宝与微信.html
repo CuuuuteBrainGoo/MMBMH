@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>皮肤 · 支付宝 / 微信（含黑夜）</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E8E2D6; color:#1C1A17; padding:32px 20px 70px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .page-title{font-size:23px;font-weight:600;margin-bottom:7px;text-align:center;}
+  .page-sub{font-size:13px;color:#6B6357;line-height:1.75;max-width:720px;text-align:center;margin-bottom:30px;}
+
+  .grid{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;align-items:flex-start;}
+
+  .phone{width:300px;border-radius:24px;overflow:hidden;border:1px solid #D8D0BF;box-shadow:0 10px 30px rgba(60,50,35,.13);}
+  .phone.d{border-color:#2A2A30;box-shadow:0 10px 30px rgba(0,0,0,.38);}
+
+  .cap{font-size:11.5px;font-weight:600;padding:9px 0;text-align:center;letter-spacing:.4px;}
+  .c-l{background:#E5DECD;color:#7A7266;border-bottom:1px solid #D8D0BF;}
+  .c-d{background:#1C1A18;color:#9A9288;border-bottom:1px solid #2A2A30;}
+
+  .scr{padding:14px 13px 18px;display:flex;flex-direction:column;gap:11px;min-height:352px;}
+
+  /* 顶栏 */
+  .bar{display:flex;align-items:center;gap:8px;}
+  .bar .ti{font-size:16.5px;font-weight:600;}
+  .bar .ver{font-size:9.5px;font-weight:400;opacity:.62;}
+  .bar .sp{flex:1;}
+  .ib{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+  .ib svg{display:block;}
+
+  /* 主账卡 */
+  .hero{border-radius:18px;padding:15px 16px;}
+  .hero .lb{font-size:10px;font-weight:500;opacity:.82;}
+  .hero .big{font-size:29px;font-weight:700;letter-spacing:-.4px;margin-top:2px;}
+  .hero .sub{font-size:10px;opacity:.84;margin-top:3px;}
+  .hero .hr{height:1px;margin:11px 0 10px;}
+  .row2{display:flex;gap:0;}
+  .row3{display:flex;gap:0;margin-top:9px;}
+  .st{flex:1;}
+  .st .k{font-size:9.5px;opacity:.72;}
+  .st .v{font-size:13px;font-weight:600;margin-top:1px;}
+
+  /* 小卡 */
+  .tiles{display:flex;gap:9px;}
+  .tile{flex:1;border-radius:13px;padding:10px 6px;text-align:center;}
+  .tile .n{font-size:19px;font-weight:700;}
+  .tile .u{font-size:9px;opacity:.7;}
+  .tile .l{font-size:9.5px;margin-top:2px;}
+
+  /* 列表卡 */
+  .card{border-radius:13px;padding:10px 12px;display:flex;align-items:center;gap:10px;}
+  .bar-l{width:3.5px;height:30px;border-radius:2px;flex-shrink:0;}
+  .card .m{flex:1;}
+  .card .t1x{font-size:12px;font-weight:600;}
+  .card .t2x{font-size:9.5px;opacity:.72;margin-top:2px;}
+  .card .amt{font-size:12.5px;font-weight:700;}
+
+  .fab{align-self:flex-end;border-radius:16px;padding:9px 14px;font-size:11.5px;font-weight:600;}
+
+  /* ============ 墨金账本（现状，做对照） ============ */
+  .sk-mo .scr{background:#F7F3EA;}
+  .sk-mo.d .scr{background:#131210;}
+  .sk-mo .bar .ti{color:#1C1A17;} .sk-mo.d .bar .ti{color:#EDE7DC;}
+  .sk-mo .ib{background:rgba(28,26,23,.055);} .sk-mo.d .ib{background:rgba(237,231,220,.09);}
+  .sk-mo .ib svg{stroke:#2A2520;} .sk-mo.d .ib svg{stroke:#EDE7DC;}
+  .sk-mo .hero{background:linear-gradient(135deg,#1F4A3C,#163830);}
+  .sk-mo.d .hero{background:linear-gradient(135deg,#2B2723,#221F1C);border:1px solid rgba(242,236,224,.10);}
+  .sk-mo .hero .lb,.sk-mo .hero .big,.sk-mo .hero .sub,.sk-mo .hero .st{color:#F2EDE3;}
+  .sk-mo .hero .hr{background:rgba(242,236,224,.22);}
+  .sk-mo .tile{background:#EDE6D8;} .sk-mo.d .tile{background:#2A2722;}
+  .sk-mo .tile .n{color:#1C1A16;} .sk-mo.d .tile .n{color:#EAE4D8;}
+  .sk-mo .tile .u,.sk-mo .tile .l{color:#5C564B;} .sk-mo.d .tile .u,.sk-mo.d .tile .l{color:#B8B0A0;}
+  .sk-mo .card{background:#FFFCF6;} .sk-mo.d .card{background:#1C1A17;}
+  .sk-mo .card .t1x{color:#1C1A16;} .sk-mo.d .card .t1x{color:#EAE4D8;}
+  .sk-mo .card .t2x{color:#5C564B;} .sk-mo.d .card .t2x{color:#B8B0A0;}
+  .sk-mo .fab{background:#1F4A3C;color:#fff;} .sk-mo.d .fab{background:#4A423A;color:#F2EDE3;}
+
+  /* ============ 支付宝皮肤 ============ */
+  .sk-alipay .scr{background:#F5F6F8;}
+  .sk-alipay.d .scr{background:#121417;}
+  .sk-alipay .bar .ti{color:#1A1A1A;} .sk-alipay.d .bar .ti{color:#E8EAED;}
+  .sk-alipay .ib{background:rgba(22,119,255,.09);} .sk-alipay.d .ib{background:rgba(22,119,255,.18);}
+  .sk-alipay .ib svg{stroke:#1677FF;} .sk-alipay.d .ib svg{stroke:#5AA0FF;}
+  .sk-alipay .hero{background:linear-gradient(135deg,#3399FF,#1677FF 62%,#0F5FD9);}
+  .sk-alipay.d .hero{background:linear-gradient(135deg,#2A2F36,#1E2329);border:1px solid rgba(255,255,255,.09);}
+  .sk-alipay .hero .lb,.sk-alipay .hero .big,.sk-alipay .hero .sub,.sk-alipay .hero .st{color:#fff;}
+  .sk-alipay .hero .hr{background:rgba(255,255,255,.26);}
+  .sk-alipay .tile{background:#FFFFFF;border:1px solid #E6E9EF;}
+  .sk-alipay.d .tile{background:#1E2226;border:1px solid #2C3238;}
+  .sk-alipay .tile .n{color:#1A1A1A;} .sk-alipay.d .tile .n{color:#E8EAED;}
+  .sk-alipay .tile .u,.sk-alipay .tile .l{color:#8A9099;} .sk-alipay.d .tile .u,.sk-alipay.d .tile .l{color:#8B939D;}
+  .sk-alipay .card{background:#FFFFFF;border:1px solid #E6E9EF;}
+  .sk-alipay.d .card{background:#1E2226;border:1px solid #2C3238;}
+  .sk-alipay .card .t1x{color:#1A1A1A;} .sk-alipay.d .card .t1x{color:#E8EAED;}
+  .sk-alipay .card .t2x{color:#8A9099;} .sk-alipay.d .card .t2x{color:#8B939D;}
+  .sk-alipay .fab{background:#1677FF;color:#fff;} .sk-alipay.d .fab{background:#1677FF;color:#fff;}
+
+  /* ============ 微信皮肤 ============ */
+  .sk-wx .scr{background:#EDEDED;}
+  .sk-wx.d .scr{background:#191919;}
+  .sk-wx .bar{background:#EDEDED;}
+  .sk-wx .bar .ti{color:#171717;} .sk-wx.d .bar .ti{color:#D8D8D8;}
+  .sk-wx .ib{background:rgba(7,193,96,.10);} .sk-wx.d .ib{background:rgba(7,193,96,.16);}
+  .sk-wx .ib svg{stroke:#07C160;} .sk-wx.d .ib svg{stroke:#3ED584;}
+  .sk-wx .hero{background:linear-gradient(135deg,#07C160,#06A050 62%,#058B45);}
+  .sk-wx.d .hero{background:linear-gradient(135deg,#212121,#1A1A1A);border:1px solid rgba(255,255,255,.08);}
+  .sk-wx .hero .lb,.sk-wx .hero .big,.sk-wx .hero .sub,.sk-wx .hero .st{color:#fff;}
+  .sk-wx .hero .hr{background:rgba(255,255,255,.26);}
+  .sk-wx .tile{background:#FFFFFF;}
+  .sk-wx.d .tile{background:#252525;}
+  .sk-wx .tile .n{color:#171717;} .sk-wx.d .tile .n{color:#D8D8D8;}
+  .sk-wx .tile .u,.sk-wx .tile .l{color:#9A9A9A;} .sk-wx.d .tile .u,.sk-wx.d .tile .l{color:#8C8C8C;}
+  .sk-wx .card{background:#FFFFFF;}
+  .sk-wx.d .card{background:#252525;}
+  .sk-wx .card .t1x{color:#171717;} .sk-wx.d .card .t1x{color:#D8D8D8;}
+  .sk-wx .card .t2x{color:#9A9A9A;} .sk-wx.d .card .t2x{color:#8C8C8C;}
+  .sk-wx .fab{background:#07C160;color:#fff;} .sk-wx.d .fab{background:#07C160;color:#fff;}
+
+  .swatch{display:flex;gap:5px;margin-top:2px;}
+  .sw{width:15px;height:15px;border-radius:5px;}
+
+  .foot{max-width:1020px;width:100%;margin-top:34px;background:#FFFDF8;border:1px solid #DED6C6;border-radius:18px;padding:24px 26px;font-size:13px;line-height:1.8;color:#4A4439;}
+  .foot h3{font-size:15px;font-weight:600;margin-bottom:12px;color:#1C1A17;}
+  .foot h3:not(:first-child){margin-top:22px;}
+  .foot ul{padding-left:20px;} .foot li{margin-bottom:8px;} .foot b{color:#1C1A17;}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#EDE6D8;padding:1px 5px;border-radius:4px;}
+  table{border-collapse:collapse;width:100%;font-size:12px;margin:8px 0 4px;}
+  th,td{border:1px solid #E0D8C8;padding:6px 9px;text-align:left;}
+  th{background:#F2EBDC;font-weight:600;}
+</style>
+</head>
+<body>
+
+<h1 class="page-title">皮肤 · 支付宝 / 微信（含黑夜）</h1>
+<p class="page-sub">
+  四个方案并排：墨金账本（现状，做对照）、支付宝、微信，右侧一列是各自的黑夜模式。<br>
+  重点看<b>主账卡</b>和<b>蓝绿红三个业务色</b>的相处方式，往下滚有对照表和取舍说明。
+</p>
+
+<div class="grid">
+
+  <!-- 墨金·白天 -->
+  <div class="phone sk-mo">
+    <div class="cap c-l">墨金账本 · 白天（现状）</div>
+    <div class="scr">
+      <div class="bar"><span class="ti">彩票账本<span class="ver"> v1.4.1</span></span><span class="sp"></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg></span>
+      </div>
+      <div class="hero"><div class="lb">净收支</div><div class="big">−¥86.00</div><div class="sub">还没回本</div>
+        <div class="hr"></div>
+        <div class="row2"><div class="st"><div class="k">花出去</div><div class="v">¥186.00</div></div><div class="st"><div class="k">中奖</div><div class="v">¥100.00</div></div></div>
+        <div class="row3"><div class="st"><div class="k">待兑</div><div class="v">¥100.00</div></div><div class="st"><div class="k">过期</div><div class="v">−¥0.00</div></div></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div><span class="n">12</span><span class="u">张</span></div><div class="l">已入账</div></div>
+        <div class="tile"><div><span class="n">36</span><span class="u">注</span></div><div class="l">总注数</div></div>
+        <div class="tile"><div><span class="n">3</span><span class="u">张</span></div><div class="l">待开奖</div></div>
+      </div>
+      <div class="card"><div class="bar-l" style="background:#C0392B"></div><div class="m"><div class="t1x">双色球 2026111</div><div class="t2x">10-08 20:30 · 5 注</div></div><div class="amt" style="color:#C0392B">+¥100.00</div></div>
+      <div class="fab">+ 录入彩票</div>
+    </div>
+  </div>
+
+  <!-- 支付宝·白天 -->
+  <div class="phone sk-alipay">
+    <div class="cap c-l">支付宝皮肤 · 白天</div>
+    <div class="scr">
+      <div class="bar"><span class="ti">彩票账本<span class="ver"> v1.4.1</span></span><span class="sp"></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg></span>
+      </div>
+      <div class="hero"><div class="lb">净收支</div><div class="big">−¥86.00</div><div class="sub">还没回本</div>
+        <div class="hr"></div>
+        <div class="row2"><div class="st"><div class="k">花出去</div><div class="v">¥186.00</div></div><div class="st"><div class="k">中奖</div><div class="v">¥100.00</div></div></div>
+        <div class="row3"><div class="st"><div class="k">待兑</div><div class="v">¥100.00</div></div><div class="st"><div class="k">过期</div><div class="v">−¥0.00</div></div></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div><span class="n">12</span><span class="u">张</span></div><div class="l">已入账</div></div>
+        <div class="tile"><div><span class="n">36</span><span class="u">注</span></div><div class="l">总注数</div></div>
+        <div class="tile"><div><span class="n">3</span><span class="u">张</span></div><div class="l">待开奖</div></div>
+      </div>
+      <div class="card"><div class="bar-l" style="background:#F5222D"></div><div class="m"><div class="t1x">双色球 2026111</div><div class="t2x">10-08 20:30 · 5 注</div></div><div class="amt" style="color:#F5222D">+¥100.00</div></div>
+      <div class="fab">+ 录入彩票</div>
+    </div>
+  </div>
+
+  <!-- 微信·白天 -->
+  <div class="phone sk-wx">
+    <div class="cap c-l">微信皮肤 · 白天</div>
+    <div class="scr">
+      <div class="bar"><span class="ti">彩票账本<span class="ver"> v1.4.1</span></span><span class="sp"></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg></span>
+      </div>
+      <div class="hero"><div class="lb">净收支</div><div class="big">−¥86.00</div><div class="sub">还没回本</div>
+        <div class="hr"></div>
+        <div class="row2"><div class="st"><div class="k">花出去</div><div class="v">¥186.00</div></div><div class="st"><div class="k">中奖</div><div class="v">¥100.00</div></div></div>
+        <div class="row3"><div class="st"><div class="k">待兑</div><div class="v">¥100.00</div></div><div class="st"><div class="k">过期</div><div class="v">−¥0.00</div></div></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div><span class="n">12</span><span class="u">张</span></div><div class="l">已入账</div></div>
+        <div class="tile"><div><span class="n">36</span><span class="u">注</span></div><div class="l">总注数</div></div>
+        <div class="tile"><div><span class="n">3</span><span class="u">张</span></div><div class="l">待开奖</div></div>
+      </div>
+      <div class="card"><div class="bar-l" style="background:#F5222D"></div><div class="m"><div class="t1x">双色球 2026111</div><div class="t2x">10-08 20:30 · 5 注</div></div><div class="amt" style="color:#F5222D">+¥100.00</div></div>
+      <div class="fab">+ 录入彩票</div>
+    </div>
+  </div>
+
+  <!-- 墨金·黑夜 -->
+  <div class="phone sk-mo d">
+    <div class="cap c-d">墨金账本 · 黑夜（现状方案）</div>
+    <div class="scr">
+      <div class="bar"><span class="ti">彩票账本<span class="ver"> v1.4.1</span></span><span class="sp"></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg></span>
+      </div>
+      <div class="hero"><div class="lb">净收支</div><div class="big">−¥86.00</div><div class="sub">还没回本</div>
+        <div class="hr"></div>
+        <div class="row2"><div class="st"><div class="k">花出去</div><div class="v">¥186.00</div></div><div class="st"><div class="k">中奖</div><div class="v">¥100.00</div></div></div>
+        <div class="row3"><div class="st"><div class="k">待兑</div><div class="v">¥100.00</div></div><div class="st"><div class="k">过期</div><div class="v">−¥0.00</div></div></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div><span class="n">12</span><span class="u">张</span></div><div class="l">已入账</div></div>
+        <div class="tile"><div><span class="n">36</span><span class="u">注</span></div><div class="l">总注数</div></div>
+        <div class="tile"><div><span class="n">3</span><span class="u">张</span></div><div class="l">待开奖</div></div>
+      </div>
+      <div class="card"><div class="bar-l" style="background:#E0503F"></div><div class="m"><div class="t1x">双色球 2026111</div><div class="t2x">10-08 20:30 · 5 注</div></div><div class="amt" style="color:#E0503F">+¥100.00</div></div>
+      <div class="fab">+ 录入彩票</div>
+    </div>
+  </div>
+
+  <!-- 支付宝·黑夜 -->
+  <div class="phone sk-alipay d">
+    <div class="cap c-d">支付宝皮肤 · 黑夜</div>
+    <div class="scr">
+      <div class="bar"><span class="ti">彩票账本<span class="ver"> v1.4.1</span></span><span class="sp"></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg></span>
+      </div>
+      <div class="hero"><div class="lb">净收支</div><div class="big">−¥86.00</div><div class="sub">还没回本</div>
+        <div class="hr"></div>
+        <div class="row2"><div class="st"><div class="k">花出去</div><div class="v">¥186.00</div></div><div class="st"><div class="k">中奖</div><div class="v">¥100.00</div></div></div>
+        <div class="row3"><div class="st"><div class="k">待兑</div><div class="v">¥100.00</div></div><div class="st"><div class="k">过期</div><div class="v">−¥0.00</div></div></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div><span class="n">12</span><span class="u">张</span></div><div class="l">已入账</div></div>
+        <div class="tile"><div><span class="n">36</span><span class="u">注</span></div><div class="l">总注数</div></div>
+        <div class="tile"><div><span class="n">3</span><span class="u">张</span></div><div class="l">待开奖</div></div>
+      </div>
+      <div class="card"><div class="bar-l" style="background:#FF6B63"></div><div class="m"><div class="t1x">双色球 2026111</div><div class="t2x">10-08 20:30 · 5 注</div></div><div class="amt" style="color:#FF6B63">+¥100.00</div></div>
+      <div class="fab">+ 录入彩票</div>
+    </div>
+  </div>
+
+  <!-- 微信·黑夜 -->
+  <div class="phone sk-wx d">
+    <div class="cap c-d">微信皮肤 · 黑夜</div>
+    <div class="scr">
+      <div class="bar"><span class="ti">彩票账本<span class="ver"> v1.4.1</span></span><span class="sp"></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></span>
+        <span class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg></span>
+      </div>
+      <div class="hero"><div class="lb">净收支</div><div class="big">−¥86.00</div><div class="sub">还没回本</div>
+        <div class="hr"></div>
+        <div class="row2"><div class="st"><div class="k">花出去</div><div class="v">¥186.00</div></div><div class="st"><div class="k">中奖</div><div class="v">¥100.00</div></div></div>
+        <div class="row3"><div class="st"><div class="k">待兑</div><div class="v">¥100.00</div></div><div class="st"><div class="k">过期</div><div class="v">−¥0.00</div></div></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div><span class="n">12</span><span class="u">张</span></div><div class="l">已入账</div></div>
+        <div class="tile"><div><span class="n">36</span><span class="u">注</span></div><div class="l">总注数</div></div>
+        <div class="tile"><div><span class="n">3</span><span class="u">张</span></div><div class="l">待开奖</div></div>
+      </div>
+      <div class="card"><div class="bar-l" style="background:#FF6B63"></div><div class="m"><div class="t1x">双色球 2026111</div><div class="t2x">10-08 20:30 · 5 注</div></div><div class="amt" style="color:#FF6B63">+¥100.00</div></div>
+      <div class="fab">+ 录入彩票</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">
+
+  <h3>三套皮肤的颜色对照</h3>
+  <table>
+    <tr><th>用处</th><th>墨金账本</th><th>支付宝皮肤</th><th>微信皮肤</th></tr>
+    <tr><td>页面底</td><td>宣纸白 <code>#F7F3EA</code> / 墨 <code>#131210</code></td><td>冷白 <code>#F5F6F8</code> / 近黑 <code>#121417</code></td><td>微信灰 <code>#EDEDED</code> / <code>#191919</code></td></tr>
+    <tr><td>主色（按钮 / 强调）</td><td>墨绿 <code>#1F4A3C</code></td><td>支付宝蓝 <code>#1677FF</code></td><td>微信绿 <code>#07C160</code></td></tr>
+    <tr><td>主账卡</td><td>墨绿渐变</td><td>蓝色渐变 <code>#3399FF→#0F5FD9</code></td><td>绿色渐变 <code>#07C160→#058B45</code></td></tr>
+    <tr><td>支出色（花掉的）</td><td>墨绿 <code>#2E7D5B</code></td><td><b>灰 <code>#6B7280</code></b></td><td><b>灰 <code>#8A8A8A</code></b></td></tr>
+    <tr><td>中奖色</td><td>中国红 <code>#C0392B</code></td><td>正红 <code>#F5222D</code></td><td>正红 <code>#F5222D</code></td></tr>
+    <tr><td>卡片</td><td>米白 / <code>#1C1A17</code></td><td>纯白 + 1px 边 / <code>#1E2226</code></td><td>纯白 / <code>#252525</code></td></tr>
+  </table>
+
+  <h3>有一个坑必须提前说：支出色不能跟着皮肤走</h3>
+  <ul>
+    <li>墨金账本里「支出」是<b>墨绿</b>。如果支付宝皮肤的主色是蓝、微信皮肤的主色是绿，
+      而支出色还留着墨绿 —— <b>在微信皮肤下「支出绿」和「主色绿」会撞在一起</b>，
+      用户根本分不清哪个是按钮、哪个是"我亏了"。</li>
+    <li>所以我在两个新皮肤里把<b>支出色改成灰色</b>（<code>#6B7280</code> / <code>#8A8A8A</code>）。
+      灰 = 「钱花掉了、没了」，语义上完全说得通，而且跟蓝/绿主色都不撞。</li>
+    <li>另一个选择是支出继续用绿、主色靠边站 —— 但那样主色就只能用在很窄的地方，
+      皮肤的辨识度就没了。<b>我推荐改灰。</b></li>
+  </ul>
+
+  <h3>三个红线（三套皮肤都必须守住）</h3>
+  <ul>
+    <li><b>中奖永远是红</b>（中国习惯，红=涨）。这是铁律，皮肤不许改它。</li>
+    <li><b>过期未兑永远是紫</b>。<b>号码球永远是「红球红、蓝球蓝」</b> ——
+      这是彩票本身的规则，不是审美选择。所以支付宝皮肤下，蓝球和按钮是同色系，
+      我用了<b>更深的蓝</b>（<code>#0A4FB5</code>）把两者拉开。</li>
+    <li><b>黑色模式不是把浅色反转</b>：浅色靠"比背景深"分层，深色靠"比背景亮"分层。
+      三个皮肤的黑夜版我都是按后者重配的，不是简单调暗。</li>
+  </ul>
+
+  <h3>要你拍板的一件事：筛选后主账跟着变吗</h3>
+  <ul>
+    <li>你要求「筛选结果反映在主账上，让用户直观看到金额变化」—— 这个我照做。
+      它会推翻原来那条「总账不跟着筛选变」的规矩。</li>
+    <li>但有两个做法，差别不小：</li>
+  </ul>
+  <table>
+    <tr><th></th><th>做法 A：主账整个换成筛选结果</th><th>做法 B：主账不变，下面多一行「当前筛选」(推荐)</th></tr>
+    <tr><td>用户看到</td><td>净收支直接变成筛选后那部分的数字</td><td>「净收支 ¥-86.00」还在，下面加一条「当前筛选：近3个月 · 花 ¥62.00 · 中 ¥100.00 · 净 +¥38.00」</td></tr>
+    <tr><td>好处</td><td>最直观，一眼就是筛出来的账</td><td>「净收支」这四个字永远代表全部账，不会看错；同时筛选的效果也一清二楚</td></tr>
+    <tr><td>风险</td><td>在看筛选结果时，会误以为这就是全部账 —— 这是原始文档明确警告过的坑</td><td>主卡上多一行，稍微复杂一点</td></tr>
+  </table>
+  <ul>
+    <li><b>我推荐 B</b>：理由是「净收支」是天天看的主数字，它跟着筛选漂移的话，
+      你今天看是 −86、明天筛了一下变成 +38，很容易以为自己记错账了。
+      而 B 既满足了「直观看到金额变化」，又不让主数字失去基准。</li>
+    <li>你要是就想要 A 那种"直接换掉"的爽感，说一声也行 —— 那就按 A 做，
+      但我会在主账上明确标一行「（仅显示筛选结果）」防止误读。</li>
+  </ul>
+
+</div>
+
+</body>
+</html>

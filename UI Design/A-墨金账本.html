@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方案 A · 墨金账本（现有风格精修）</title>
+<style>
+  /* ============================================================
+     方案 A：墨金账本 —— 在现有设计语言上做精修
+     核心保留：宣纸底 + 墨色 + 中国红/墨绿/紫 的语义色
+     核心改进：更强的层级对比、更克制的留白、数字更突出
+     ============================================================ */
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  :root {
+    /* —— 底色：宣纸 —— */
+    --paper:      #F7F3EA;
+    --paper-2:    #FFFDF8;
+    --ink:        #1C1A17;
+    --ink-2:      #5A544B;
+    --ink-3:      #8F887C;
+    --line:       #E2DBCB;
+
+    /* —— 语义色 —— */
+    --prize:      #C0392B;   /* 中奖 · 中国红 */
+    --spend:      #2E7D5B;   /* 花出去 · 墨绿 */
+    --warn:       #C08A2E;   /* 待确认 · 金 */
+    --expired:    #7B3FA0;   /* 过期 · 紫 */
+    --tease:      #5B4B8A;   /* 彩蛋 · 蓝紫 */
+
+    /* —— 球色 —— */
+    --ball-red:   #C0392B;
+    --ball-blue:  #2C6FB5;
+  }
+
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #EDE7DA;
+    color: var(--ink);
+    padding: 32px 20px 60px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+
+  .page-title { text-align:center; margin-bottom: 6px; font-size: 22px; font-weight: 600; letter-spacing:.5px; }
+  .page-sub   { text-align:center; margin-bottom: 28px; font-size: 13px; color:#6B6357; line-height:1.7; max-width:640px; }
+
+  /* —— 手机框 —— */
+  .phones { display:flex; gap: 28px; flex-wrap: wrap; justify-content:center; }
+
+  .phone {
+    width: 344px;
+    background: var(--paper);
+    border-radius: 30px;
+    border: 1px solid #D8D0BF;
+    overflow: hidden;
+    box-shadow: 0 10px 34px rgba(60,50,35,.13);
+    display: flex; flex-direction: column;
+  }
+  .phone-label {
+    text-align:center; font-size:12px; font-weight:600; color:#7A7266;
+    padding: 12px 0 10px; letter-spacing:.6px; background:#E5DECD;
+    border-bottom:1px solid #D8D0BF;
+  }
+
+  /* —— 状态栏 —— */
+  .statusbar {
+    height: 30px; display:flex; align-items:center; justify-content:space-between;
+    padding: 0 18px; font-size: 11px; color: var(--ink-2); font-weight:500;
+  }
+
+  /* —— 顶栏 —— */
+  .topbar {
+    display:flex; align-items:center; gap: 10px;
+    padding: 4px 16px 14px;
+  }
+  .topbar h1 { font-size: 19px; font-weight: 600; letter-spacing:.3px; }
+  .topbar .ver { font-size: 10px; color: var(--ink-3); font-weight:400; margin-left: 2px; }
+  .topbar .spacer { flex:1; }
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 9px;
+    display:flex; align-items:center; justify-content:center;
+    color: var(--ink-2); position: relative;
+  }
+  .badge-dot {
+    position:absolute; top:-1px; right:-2px;
+    min-width:15px; height:15px; padding:0 4px;
+    border-radius:8px; background: var(--prize); color:#fff;
+    font-size:9px; line-height:15px; text-align:center; font-weight:600;
+  }
+
+  /* —— 内容区 —— */
+  .body { padding: 0 14px 20px; display:flex; flex-direction:column; gap: 12px; }
+
+  /* ===== 主账卡片：这一版的视觉核心 ===== */
+  .hero {
+    background: linear-gradient(160deg, #211E1A 0%, #17150F 100%);
+    border-radius: 20px;
+    padding: 20px 20px 18px;
+    color: #F2EDE3;
+    position: relative;
+    overflow: hidden;
+  }
+  /* 右上角的暗金弧光，不作装饰噪点，只是让黑块不闷 */
+  .hero::after {
+    content:''; position:absolute; top:-70px; right:-50px;
+    width: 190px; height: 190px; border-radius:50%;
+    background: radial-gradient(circle, rgba(192,138,46,.22) 0%, rgba(192,138,46,0) 70%);
+  }
+  .hero-label { font-size: 11px; color:#9A9285; letter-spacing:1.4px; margin-bottom: 8px; }
+  .hero-num {
+    font-size: 42px; font-weight: 700; letter-spacing:-1.2px; line-height:1;
+    font-variant-numeric: tabular-nums;
+  }
+  .hero-num .cur { font-size: 22px; font-weight:500; opacity:.75; margin-right:2px; }
+  .hero-num.pos { color: #FF6B57; }
+  .hero-num.neg { color: #5FD3A0; }
+
+  .hero-divider { height:1px; background: rgba(255,255,255,.10); margin: 16px 0 13px; }
+
+  .hero-row { display:flex; gap: 6px; }
+  .hero-cell { flex:1; }
+  .hero-cell .k { font-size:10px; color:#9A9285; margin-bottom:4px; letter-spacing:.4px; }
+  .hero-cell .v { font-size:15px; font-weight:600; font-variant-numeric: tabular-nums; }
+  .v-spend  { color:#7FCBA8; }
+  .v-prize  { color:#FF8574; }
+  .v-gold   { color:#E0B45C; }
+  .v-purple { color:#C39BE0; }
+
+  /* —— 公益金条 —— */
+  .welfare {
+    display:flex; align-items:center; gap:8px;
+    background: rgba(192,138,46,.10);
+    border: 1px solid rgba(192,138,46,.22);
+    border-radius: 12px; padding: 9px 12px;
+    font-size: 11px; color: #8A6420;
+  }
+  .welfare .strong { font-weight:600; }
+
+  /* —— 指标小卡 —— */
+  .metrics { display:flex; gap:8px; }
+  .metric {
+    flex:1; background: var(--paper-2);
+    border:1px solid var(--line); border-radius: 13px;
+    padding: 11px 12px;
+  }
+  .metric .k { font-size:10px; color: var(--ink-3); margin-bottom:5px; }
+  .metric .v { font-size:17px; font-weight:600; font-variant-numeric: tabular-nums; }
+
+  /* —— 提示条 —— */
+  .banner {
+    display:flex; align-items:center; gap:9px;
+    background: var(--paper-2); border:1px solid var(--line);
+    border-left: 3px solid var(--warn);
+    border-radius: 11px; padding: 10px 12px;
+    font-size: 11.5px; color: var(--ink-2); line-height:1.5;
+  }
+  .banner.prize { border-left-color: var(--prize); }
+  .banner .go {
+    margin-left:auto; font-size:11px; font-weight:600; color: var(--spend);
+    white-space:nowrap;
+  }
+
+  /* —— 分区标题 —— */
+  .sec-head { display:flex; align-items:baseline; gap:8px; margin-top: 4px; }
+  .sec-head h2 { font-size:14px; font-weight:600; }
+  .sec-head .count { font-size:11px; color: var(--ink-3); }
+
+  /* ===== 彩票卡片 —— 第二视觉核心 ===== */
+  .ticket {
+    background: var(--paper-2);
+    border:1px solid var(--line);
+    border-radius: 14px;
+    padding: 13px 14px 13px 18px;
+    position: relative; overflow:hidden;
+  }
+  /* 左色彩标 */
+  .ticket::before {
+    content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
+    background: var(--ball-red);
+  }
+  .ticket.dlt::before { background: var(--ball-blue); }
+
+  .ticket-top { display:flex; align-items:center; gap:7px; margin-bottom:9px; }
+  .type-tag {
+    font-size:11px; font-weight:600; padding:2.5px 8px; border-radius:6px;
+    background: rgba(192,57,43,.10); color: var(--prize);
+  }
+  .ticket.dlt .type-tag { background: rgba(44,111,181,.10); color: var(--ball-blue); }
+  .issue { font-size:11.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .seq-badge {
+    font-size:9.5px; padding:1.5px 5px; border-radius:4px;
+    background: rgba(28,26,23,.07); color: var(--ink-3); font-weight:500;
+  }
+  .status-tag {
+    margin-left:auto; font-size:10px; font-weight:600;
+    padding: 3px 8px; border-radius: 20px;
+  }
+  .st-pending { background: rgba(192,138,46,.13); color: var(--warn); }
+  .st-won     { background: rgba(192,57,43,.12);  color: var(--prize); }
+  .st-lost    { background: rgba(28,26,23,.06);   color: var(--ink-3); }
+  .st-expired { background: rgba(123,63,160,.12); color: var(--expired); }
+  .st-redeem  { background: rgba(46,125,91,.12);  color: var(--spend); }
+
+  .ticket-meta { font-size:11px; color: var(--ink-3); margin-bottom:10px; line-height:1.5; }
+
+  /* 号码球 */
+  .balls { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:11px; }
+  .ball {
+    width:24px; height:24px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11.5px; font-weight:600; color:#fff;
+    background: var(--ball-red); font-variant-numeric: tabular-nums;
+  }
+  .ball.blue { background: var(--ball-blue); }
+  .ball.more { background: transparent; color: var(--ink-3); font-weight:500; font-size:10px; }
+
+  .ticket-bottom {
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding-top: 9px; border-top: 1px dashed var(--line);
+  }
+  .ticket-bottom .label { font-size:10.5px; color: var(--ink-3); }
+  .amount { font-size:19px; font-weight:700; font-variant-numeric: tabular-nums; letter-spacing:-.4px; }
+  .amt-won     { color: var(--prize); }
+  .amt-expired { color: var(--expired); }
+  .amt-none    { color: var(--ink-3); font-weight:500; font-size:14px; }
+
+  /* —— 底部主按钮 —— */
+  .fab {
+    margin: 4px 14px 14px;
+    height: 48px; border-radius: 15px;
+    background: linear-gradient(160deg, #2A2520 0%, #1A1712 100%);
+    color: #F2EDE3;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    font-size:14.5px; font-weight:600; letter-spacing:.4px;
+  }
+
+  /* ===== 设置页 ===== */
+  .set-group { margin-bottom: 4px; }
+  .set-group-title {
+    font-size:11px; font-weight:600; color: var(--ink-3);
+    letter-spacing:.8px; margin: 6px 0 8px 4px;
+  }
+  .set-list {
+    background: var(--paper-2); border:1px solid var(--line);
+    border-radius: 14px; overflow:hidden;
+  }
+  .set-item {
+    display:flex; align-items:center; gap:11px;
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .set-item:last-child { border-bottom:none; }
+  .set-ico {
+    width:29px; height:29px; border-radius:9px;
+    background: rgba(28,26,23,.05);
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; flex-shrink:0;
+  }
+  .set-item .txt { flex:1; min-width:0; }
+  .set-item .t1 { font-size:13.5px; font-weight:500; }
+  .set-item .t2 { font-size:10.5px; color: var(--ink-3); margin-top:2px; line-height:1.45; }
+  .set-item .arrow { color:#C4BCAC; font-size:15px; }
+
+  /* 帮助入口：整块高亮 */
+  .help-card {
+    background: rgba(46,125,91,.07);
+    border: 1px solid rgba(46,125,91,.20);
+    border-radius: 14px; padding: 13px 14px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .help-card .hc-ico {
+    width:34px; height:34px; border-radius:10px;
+    background: rgba(46,125,91,.14); color: var(--spend);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700; flex-shrink:0;
+  }
+  .help-card .t1 { font-size:13.5px; font-weight:600; color: var(--spend); }
+  .help-card .t2 { font-size:10.5px; color:#5B7268; margin-top:3px; line-height:1.5; }
+
+  /* AI 平台卡 */
+  .ai-card {
+    background: var(--paper-2); border:1px solid var(--line);
+    border-radius: 14px; padding: 13px 14px;
+  }
+  .ai-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .ai-head .n { font-size:13.5px; font-weight:600; }
+  .ai-head .x { margin-left:auto; color:#C4BCAC; font-size:15px; }
+  .ai-kv { font-size:10.5px; color: var(--ink-3); line-height:1.75; }
+  .ai-kv b { color: var(--ink-2); font-weight:500; }
+  .pill {
+    display:inline-block; font-size:9.5px; padding:2px 7px; border-radius:20px;
+    font-weight:600; margin-left:6px;
+  }
+  .pill-ok { background: rgba(46,125,91,.12); color: var(--spend); }
+
+  /* 主题选择 */
+  .seg {
+    display:flex; gap:4px; background: rgba(28,26,23,.05);
+    border-radius: 11px; padding: 3px;
+  }
+  .seg .seg-item {
+    flex:1; text-align:center; font-size:11.5px; padding: 7px 0;
+    border-radius: 8px; color: var(--ink-2); font-weight:500;
+  }
+  .seg .seg-item.on {
+    background: var(--paper-2); color: var(--ink);
+    font-weight:600; box-shadow: 0 1px 3px rgba(40,32,20,.10);
+  }
+
+  .note { font-size:11px; color: var(--ink-3); line-height:1.6; }
+
+  /* 注释标签 */
+  .annot {
+    position:relative;
+    display:flex; gap:12px; align-items:flex-start;
+    max-width: 344px; width:100%;
+    font-size:11.5px; color:#6B6357; line-height:1.6;
+  }
+  .annot .num {
+    flex-shrink:0; width:19px; height:19px; border-radius:50%;
+    background:#4A4439; color:#F0EBE0;
+    font-size:10.5px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+    margin-top:1px;
+  }
+
+  .col { display:flex; flex-direction:column; gap:14px; align-items:center; }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">方案 A · 墨金账本</h1>
+<p class="page-sub">
+  保留现有气质：宣纸底、墨色、中国红。改动集中在<b>层级</b>——主账用深墨块压住全屏，<br>
+  数字加大加粗，其余信息一律退到灰阶，让「多少钱」永远是第一眼看到的东西。
+</p>
+
+<div class="phones">
+
+  <!-- ================= 首页 ================= -->
+  <div class="col">
+    <div class="phone">
+      <div class="phone-label">首页 · 总账与记录</div>
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ ▮</span></div>
+
+      <div class="topbar">
+        <h1>彩票账本<span class="ver">v1.4.1</span></h1>
+        <div class="spacer"></div>
+        <div class="icon-btn">☰<span class="badge-dot">2</span></div>
+        <div class="icon-btn">▤</div>
+        <div class="icon-btn">⚙</div>
+      </div>
+
+      <div class="body">
+
+        <!-- 主账 -->
+        <div class="hero">
+          <div class="hero-label">净 收 支</div>
+          <div class="hero-num neg"><span class="cur">−¥</span>483.00</div>
+          <div class="hero-divider"></div>
+          <div class="hero-row">
+            <div class="hero-cell">
+              <div class="k">花出去</div>
+              <div class="v v-spend">¥1,240.00</div>
+            </div>
+            <div class="hero-cell">
+              <div class="k">中奖</div>
+              <div class="v v-prize">¥757.00</div>
+            </div>
+          </div>
+          <div class="hero-divider"></div>
+          <div class="hero-row">
+            <div class="hero-cell">
+              <div class="k">已兑</div>
+              <div class="v v-gold">¥520.00</div>
+            </div>
+            <div class="hero-cell">
+              <div class="k">待兑</div>
+              <div class="v v-gold">¥237.00</div>
+            </div>
+            <div class="hero-cell">
+              <div class="k">过期</div>
+              <div class="v v-purple">−¥80.00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 公益金 -->
+        <div class="welfare">
+          <span>公益金</span>
+          <span class="strong">¥446.40</span>
+          <span style="opacity:.7">· 票面金额的 36%</span>
+        </div>
+
+        <!-- 三指标 -->
+        <div class="metrics">
+          <div class="metric"><div class="k">已入账</div><div class="v">23</div></div>
+          <div class="metric"><div class="k">总注数</div><div class="v">46</div></div>
+          <div class="metric"><div class="k">待开奖</div><div class="v" style="color:var(--warn)">3</div></div>
+        </div>
+
+        <!-- 提示 -->
+        <div class="banner prize">
+          <span>有 2 张票中了奖，去确认金额</span>
+          <span class="go">去处理 ›</span>
+        </div>
+
+        <div class="sec-head">
+          <h2>购彩记录</h2>
+          <span class="count">共 23 张</span>
+        </div>
+
+        <!-- 彩票卡：已中奖 -->
+        <div class="ticket">
+          <div class="ticket-top">
+            <span class="type-tag">双色球</span>
+            <span class="issue">26104 期</span>
+            <span class="status-tag st-won">中奖</span>
+          </div>
+          <div class="ticket-meta">开奖 2026-09-26 · 2 注 × 3 倍</div>
+          <div class="balls">
+            <span class="ball">03</span><span class="ball">12</span>
+            <span class="ball">18</span><span class="ball">25</span>
+            <span class="ball">29</span><span class="ball">33</span>
+            <span class="ball blue">07</span>
+          </div>
+          <div class="ticket-bottom">
+            <span class="label">中奖金额</span>
+            <span class="amount amt-won">¥ 300.00</span>
+          </div>
+        </div>
+
+        <!-- 彩票卡：待开奖 -->
+        <div class="ticket dlt">
+          <div class="ticket-top">
+            <span class="type-tag">大乐透</span>
+            <span class="issue">26112 期</span>
+            <span class="status-tag st-pending">待开奖</span>
+          </div>
+          <div class="ticket-meta">开奖 2026-09-29 · 1 注 · 追加</div>
+          <div class="balls">
+            <span class="ball">05</span><span class="ball">11</span>
+            <span class="ball">19</span><span class="ball">27</span>
+            <span class="ball">34</span>
+            <span class="ball blue">02</span><span class="ball blue">09</span>
+          </div>
+          <div class="ticket-bottom">
+            <span class="label">已花费</span>
+            <span class="amount amt-none">¥ 3.00</span>
+          </div>
+        </div>
+
+        <!-- 彩票卡：过期 -->
+        <div class="ticket">
+          <div class="ticket-top">
+            <span class="type-tag">双色球</span>
+            <span class="issue">26087 期</span>
+            <span class="status-tag st-expired">已过期未兑</span>
+          </div>
+          <div class="ticket-meta">开奖 2026-07-20 · 1 注</div>
+          <div class="balls">
+            <span class="ball">01</span><span class="ball">08</span>
+            <span class="ball">14</span><span class="ball">22</span>
+            <span class="ball">30</span><span class="ball">31</span>
+            <span class="ball blue">11</span>
+          </div>
+          <div class="ticket-bottom">
+            <span class="label">过期未兑</span>
+            <span class="amount amt-expired">−¥ 80.00</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="fab">＋ 录入彩票</div>
+    </div>
+  </div>
+
+  <!-- ================= 设置页 ================= -->
+  <div class="col">
+    <div class="phone">
+      <div class="phone-label">设置 · 平台与帮助</div>
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ ▮</span></div>
+
+      <div class="topbar">
+        <div class="icon-btn">‹</div>
+        <h1>设置</h1>
+      </div>
+
+      <div class="body">
+
+        <div class="set-group-title">AI 识别平台</div>
+
+        <!-- 帮助入口 -->
+        <div class="help-card">
+          <div class="hc-ico">?</div>
+          <div>
+            <div class="t1">不知道怎么填？看这里</div>
+            <div class="t2">六个平台的官网跳转、官方手册，以及每个格子该填什么。第一次配大约两分钟。</div>
+          </div>
+        </div>
+
+        <!-- 平台卡 -->
+        <div class="ai-card">
+          <div class="ai-head">
+            <span class="n">豆包 / 火山方舟</span>
+            <span class="pill pill-ok">已配置</span>
+            <span class="x">⋯</span>
+          </div>
+          <div class="ai-kv">
+            <b>接入点：</b>ep-m-xxxxxxxxxxxxxxxx<br>
+            <b>角色：</b>主识别 · <b>Key：</b>已配置
+          </div>
+        </div>
+
+        <div class="set-group-title">外观</div>
+        <div class="ai-card" style="padding:12px 14px">
+          <div class="seg">
+            <div class="seg-item">浅色</div>
+            <div class="seg-item on">跟随系统</div>
+            <div class="seg-item">深色</div>
+          </div>
+          <div class="note" style="margin-top:9px">白天想亮、晚上想暗，随时切。选「跟随系统」则和手机保持一致。</div>
+        </div>
+
+        <div class="set-group-title">识别选项</div>
+        <div class="ai-card" style="padding:12px 14px">
+          <div style="font-size:13px;font-weight:500;margin-bottom:8px">思考强度</div>
+          <div class="seg">
+            <div class="seg-item on">快速</div>
+            <div class="seg-item">均衡</div>
+            <div class="seg-item">深度</div>
+          </div>
+          <div class="note" style="margin-top:9px">约 3 秒 · 默认推荐。识别一张票通常 10～30 秒。</div>
+        </div>
+
+        <div class="set-group-title">数据</div>
+        <div class="set-list">
+          <div class="set-item">
+            <div class="set-ico">↑</div>
+            <div class="txt">
+              <div class="t1">导出备份</div>
+              <div class="t2">保存为 JSON 文件，可存网盘</div>
+            </div>
+            <span class="arrow">›</span>
+          </div>
+          <div class="set-item">
+            <div class="set-ico">↓</div>
+            <div class="txt">
+              <div class="t1">从备份恢复</div>
+              <div class="t2">API Key 不进备份，需重新填写</div>
+            </div>
+            <span class="arrow">›</span>
+          </div>
+          <div class="set-item">
+            <div class="set-ico">▤</div>
+            <div class="txt">
+              <div class="t1">运行日志</div>
+              <div class="t2">识别失败时用来排查</div>
+            </div>
+            <span class="arrow">›</span>
+          </div>
+        </div>
+
+        <div class="note" style="text-align:center;margin-top:6px">
+          版本 1.4.1 (8)<br>
+          包名 com.bro.lotteryledger · minSdk 26 · targetSdk 34
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 添加 AI 表单 ================= -->
+  <div class="col">
+    <div class="phone">
+      <div class="phone-label">添加 AI · 表单说明（需求 2、3）</div>
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ ▮</span></div>
+
+      <div class="topbar">
+        <div class="icon-btn">‹</div>
+        <h1>添加 AI 平台</h1>
+      </div>
+
+      <div class="body">
+
+        <div style="font-size:11px;color:var(--ink-3);margin-bottom:2px">选择平台</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span style="font-size:11px;padding:6px 11px;border-radius:20px;background:#211E1A;color:#F2EDE3;font-weight:500">豆包 / 火山方舟</span>
+          <span style="font-size:11px;padding:6px 11px;border-radius:20px;border:1px solid var(--line);color:var(--ink-2)">腾讯混元</span>
+          <span style="font-size:11px;padding:6px 11px;border-radius:20px;border:1px solid var(--line);color:var(--ink-2)">智谱</span>
+          <span style="font-size:11px;padding:6px 11px;border-radius:20px;border:1px solid var(--line);color:var(--ink-2)">百度千帆</span>
+          <span style="font-size:11px;padding:6px 11px;border-radius:20px;border:1px solid var(--line);color:var(--ink-2)">阿里云百炼</span>
+        </div>
+
+        <!-- 平台提醒 -->
+        <div style="background:rgba(192,138,46,.09);border:1px solid rgba(192,138,46,.22);border-radius:11px;padding:10px 12px;font-size:10.5px;color:#8A6420;line-height:1.6">
+          方舟必须填「推理接入点 ID」，不能填模型名。填错会报 404，提示像是地址错了，其实不是。
+        </div>
+
+        <!-- 配置名称 -->
+        <div>
+          <div style="font-size:10.5px;color:var(--ink-3);margin-bottom:5px">配置名称</div>
+          <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:11px;padding:11px 12px;font-size:12.5px">豆包 / 火山方舟</div>
+          <div style="font-size:10px;color:var(--ink-3);margin-top:5px;line-height:1.5">随便起个好认的名字，比如「豆包-主力」。只影响你自己的列表显示。</div>
+        </div>
+
+        <!-- 接口地址 -->
+        <div>
+          <div style="font-size:10.5px;color:var(--ink-3);margin-bottom:5px">接口地址</div>
+          <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:11px;padding:11px 12px;font-size:12.5px;color:var(--ink-2)">https://ark.cn-beijing.volces.com/api/v3</div>
+          <div style="font-size:10px;color:var(--ink-3);margin-top:5px;line-height:1.5">方舟控制台页面顶部就能看到，北京区照抄即可。不用自己加 /chat/completions。</div>
+        </div>
+
+        <!-- 接入点 ID -->
+        <div>
+          <div style="font-size:10.5px;color:var(--ink-3);margin-bottom:5px">接入点 ID</div>
+          <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:11px;padding:11px 12px;font-size:12.5px;color:#B8B0A0">ep-xxxxxxxxxxxxxxxx</div>
+          <div style="font-size:10px;color:var(--ink-3);margin-top:5px;line-height:1.5">填「接入点 ID」不是模型名！在「在线推理 → 推理接入点」里创建后复制。</div>
+        </div>
+
+        <!-- API Key -->
+        <div>
+          <div style="font-size:10.5px;color:var(--ink-3);margin-bottom:5px">API Key</div>
+          <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:11px;padding:11px 12px;font-size:12.5px;color:#B8B0A0">••••••••••••••••</div>
+          <div style="font-size:10px;color:var(--ink-3);margin-top:5px;line-height:1.5">方舟控制台左侧「API Key 管理」里创建。只存在这台手机里，不会上传、也不进备份。</div>
+        </div>
+
+        <div style="height:1px;background:var(--line);margin:4px 0"></div>
+
+        <div style="font-size:10.5px;color:var(--ink-3);line-height:1.5">
+          连通性测试（真发一次请求，约 1500 token）
+        </div>
+        <div style="height:40px;border-radius:12px;background:#211E1A;color:#F2EDE3;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">测试连通性</div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="col" style="margin-top:34px">
+  <div class="annot">
+    <div class="num">1</div>
+    <div><b>主账压深。</b>现在是浅底大数字，这一版改成深墨块 + 高对比数字。理由：账本的核心问题是「我到底赚了还是亏了」，深色块把这一句钉在视觉最上层，滚动时也一直在视线里。</div>
+  </div>
+  <div class="annot">
+    <div class="num">2</div>
+    <div><b>中奖红、花钱绿、过期紫</b>三色维持不变（符合中国习惯：涨红跌绿）。这一版把颜色的<b>使用面积</b>收窄了——只有金额和状态标签上色，其它全是灰阶，颜色才真正起到「一眼认出来」的作用。</div>
+  </div>
+  <div class="annot">
+    <div class="num">3</div>
+    <div><b>彩票卡加了实心号码球。</b>现在只有文字，这一版把号码画出来。理由：用户对着彩票核号码时，一列彩色球比一串数字快得多，也让每张卡有了自己的「脸」。</div>
+  </div>
+  <div class="annot">
+    <div class="num">4</div>
+    <div><b>过期金额的负号</b>用紫色 + <code>−¥</code> 前缀，从字重和颜色两个维度强调「这不是资产」。跟中奖红拉开色相距离。</div>
+  </div>
+  <div class="annot">
+    <div class="num">5</div>
+    <div><b>表单说明就是这一版要落地的需求 2。</b>每个输入框下面都有 1～2 行灰字，说清「这是什么、去哪抄、常见坑」。接入点那格特意用浅灰占位符，一眼看出是示例不是真值。</div>
+  </div>
+</div>
+
+</body>
+</html>

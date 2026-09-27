@@ -1,0 +1,57 @@
+# ===== 构建产物 =====
+# Gradle / Android 编译产生的一切中间物都不进仓库。
+# 它们能从源码重新生成，进了仓库只会让 clone 变慢、diff 变噪音。
+.gradle/
+build/
+app/build/
+build-cache/
+local.properties
+captures/
+.cxx/
+
+# ===== IDE =====
+.idea/
+*.iml
+*.hprof
+.DS_Store
+Thumbs.db
+
+# ===== 交付物：APK 里只放"当前版本" =====
+# 2026-09-27 少爷要求把 APK 一起传 GitHub。
+#
+# ⚠️ 为什么不是全放：apk/ 里已经攒了 5 个版本 × 2 变体 ≈ 350 MB。
+# git 会把这些二进制**永久留在历史里**（删文件也删不掉 .git 里的对象），
+# 仓库会一路肥下去，clone 越来越慢。
+#
+# 所以策略是：**只放最新版的两个 APK**，历史版本继续排除。
+# 每次升版时，把下面这两行的版本号改成新的，旧版自动被规则排除
+# （不写死文件名的话它就是"永久排除"，写死反而会越攒越多 ——
+#  所以这里用"排除所有、只放行最新"的写法，改一处即可）。
+apk/*.apk
+apk/*.idsig
+
+# 放行当前版本的安装包（改版本号时同步改这里）
+!apk/LotteryLedger-v1.5.0-debug-signed.apk
+!apk/LotteryLedger-v1.5.0-release-signed.apk
+
+# ===== 签名密钥：绝对不能进仓库 =====
+# 万一以后加了正式签名，把这些文件放到这里对应的位置。
+# 密钥泄露 = 别人能签出冒充你的 App，是比源码泄露更严重的事故。
+*.jks
+*.keystore
+*.p12
+*.pem
+keystore.properties
+signing.properties
+
+# ===== 本地环境 =====
+# 本地方案讨论、临时草稿之类，按需保留。
+*.log
+*.tmp
+*.bak
+
+# ===== 本地辅助脚本 =====
+# 推送助手（推送到GitHub.bat + PUSH-README.txt）只在少爷这台机器上
+# 双击用，别的地方 clone 下来也用不上，而且路径写死成本机路径。
+推送到GitHub.bat
+PUSH-README.txt

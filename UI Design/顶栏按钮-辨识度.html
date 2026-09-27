@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>顶栏按钮 · 辨识度改法</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background:#E8E2D6; color:#1C1A17;
+    padding:32px 20px 70px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+
+  .page-title { text-align:center; margin-bottom:7px; font-size:23px; font-weight:600; }
+  .page-sub { text-align:center; margin-bottom:30px; font-size:13px; color:#6B6357; line-height:1.75; max-width:700px; }
+
+  .grid { display:flex; gap:24px; flex-wrap:wrap; justify-content:center; }
+
+  .col { display:flex; flex-direction:column; gap:12px; width:344px; }
+
+  .card {
+    border-radius:22px; overflow:hidden;
+    border:1px solid #D8D0BF;
+    box-shadow:0 8px 26px rgba(60,50,35,.10);
+  }
+  .card.dark { border-color:#2A2A30; box-shadow:0 8px 26px rgba(0,0,0,.35); }
+
+  .card-label {
+    text-align:center; font-size:11.5px; font-weight:600;
+    padding:10px 0 9px; letter-spacing:.5px;
+  }
+  .card.lightbg .card-label { background:#E5DECD; color:#7A7266; border-bottom:1px solid #D8D0BF; }
+  .card.darkbg  .card-label { background:#1C1A18; color:#9A9288; border-bottom:1px solid #2A2A30; }
+
+  /* ---- 顶栏区 ---- */
+  .bar {
+    display:flex; align-items:center; gap:10px;
+    padding:14px 16px 16px;
+  }
+  .bar.ontint-light { background:#F7F3EA; }
+  .bar.ontint-dark  { background:#131210; }
+
+  .t1 { font-size:19px; font-weight:600; letter-spacing:.3px; }
+  .ontint-light .t1 { color:#1C1A17; }
+  .ontint-dark  .t1 { color:#EDE7DC; }
+  .t1 .ver { font-size:10px; font-weight:400; }
+  .ontint-light .t1 .ver { color:#8F887C; }
+  .ontint-dark  .t1 .ver  { color:#7A7365; }
+  .spacer { flex:1; }
+
+  /* ============ 图标容器样式 ============ */
+  .ic {
+    width:38px; height:38px; border-radius:11px;
+    display:flex; align-items:center; justify-content:center;
+    position:relative; flex-shrink:0;
+  }
+  .ic svg { display:block; }
+
+  /* —— 方案 1：现状（细线 + 灰） —— */
+  .s1 { background:transparent; }
+  .ontint-light .s1 svg { stroke:#5A544B; }
+  .ontint-dark  .s1 svg  { stroke:#B0A899; }
+
+  /* —— 方案 2：加底片 + 提亮线条（推荐） —— */
+  .s2 { }
+  .ontint-light .s2 { background:rgba(28,26,23,.055); }
+  .ontint-dark  .s2 { background:rgba(237,231,220,.09); }
+  .ontint-light .s2 svg { stroke:#2A2520; }
+  .ontint-dark  .s2 svg  { stroke:#EDE7DC; }
+
+  /* —— 方案 3：文字标签（最直白） —— */
+  .tabs { display:flex; gap:6px; }
+  .tab {
+    display:flex; align-items:center; gap:5px;
+    padding:7px 11px; border-radius:11px;
+    font-size:11.5px; font-weight:600; white-space:nowrap;
+  }
+  .ontint-light .tab { background:rgba(28,26,23,.055); color:#3D3830; }
+  .ontint-dark  .tab { background:rgba(237,231,220,.09); color:#E5DFD3; }
+  .ontint-light .tab svg { stroke:#2A2520; }
+  .ontint-dark  .tab svg  { stroke:#EDE7DC; }
+
+  /* ---- 角标（筛选条件生效时） ---- */
+  .dot {
+    position:absolute; top:-3px; right:-3px;
+    min-width:16px; height:16px; padding:0 4px; border-radius:9px;
+    font-size:9.5px; line-height:16px; text-align:center; font-weight:700;
+    color:#fff;
+  }
+  .ontint-light .dot { background:#C0392B; }
+  .ontint-dark  .dot { background:#FF6B5A; color:#131210; }
+
+  .notes-cell {
+    background:#FFFDF8; border:1px solid #DED6C6; border-radius:16px;
+    padding:15px 17px; font-size:11.5px; color:#5F584D; line-height:1.7;
+  }
+  .notes-cell h4 { font-size:13px; font-weight:600; color:#1C1A17; margin-bottom:7px; }
+  .notes-cell .tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:9px; }
+  .tag { font-size:10px; font-weight:600; padding:3px 8px; border-radius:20px; }
+  .tag.good { background:rgba(46,125,91,.12); color:#2E7D5B; }
+  .tag.bad  { background:rgba(176,73,47,.12); color:#B0492F; }
+  .tag.mid  { background:rgba(192,138,46,.13); color:#8A6420; }
+
+  .foot {
+    max-width:1000px; width:100%; margin-top:34px;
+    background:#FFFDF8; border:1px solid #DED6C6; border-radius:18px;
+    padding:24px 26px; font-size:13px; line-height:1.8; color:#4A4439;
+  }
+  .foot h3 { font-size:15px; font-weight:600; margin-bottom:12px; color:#1C1A17; }
+  .foot h3:not(:first-child) { margin-top:22px; }
+  .foot ul { padding-left:20px; }
+  .foot li { margin-bottom:8px; }
+  .foot b { color:#1C1A17; }
+  code { font-family:ui-monospace,Menlo,monospace; font-size:12px; background:#EDE6D8; padding:1px 5px; border-radius:4px; }
+
+
+  /* ================= 日期筛选段 ================= */
+  .divider-title {
+    width:100%; max-width:1000px; margin:54px 0 26px;
+    text-align:center; font-size:20px; font-weight:600; color:#1C1A17;
+  }
+  .divider-sub {
+    width:100%; max-width:760px; margin:-18px auto 26px;
+    text-align:center; font-size:12.5px; color:#6B6357; line-height:1.8;
+  }
+
+  .panel {
+    background:#F7F3EA; border:1px solid #D8D0BF; border-radius:20px;
+    padding:14px; font-size:12px;
+  }
+  .panel.dark { background:#131210; border-color:#2A2A30; }
+
+  .p-label { font-size:11.5px; font-weight:600; letter-spacing:.4px; margin-bottom:7px; }
+  .panel .p-label { color:#7A7266; }
+  .panel.dark .p-label { color:#8A8172; }
+
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip {
+    padding:6px 12px; border-radius:20px; font-size:11.5px; font-weight:500;
+    border:1px solid transparent; white-space:nowrap;
+  }
+  .panel .chip { background:transparent; border-color:#CFC6B3; color:#5A544B; }
+  .panel .chip.on { background:#2E7D5B; border-color:#2E7D5B; color:#FFFDF8; font-weight:600; }
+  .panel.dark .chip { background:transparent; border-color:#3A342C; color:#B0A899; }
+  .panel.dark .chip.on { background:#7FC9A6; border-color:#7FC9A6; color:#131210; font-weight:600; }
+
+  .date-row { display:flex; align-items:center; gap:8px; margin-top:12px; }
+  .date-box {
+    flex:1; padding:9px 12px; border-radius:11px; font-size:11.5px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel .date-box { background:#FFFCF6; border:1px solid #D8D0BF; color:#8F887C; }
+  .panel.dark .date-box { background:#1C1A17; border:1px solid #3A342C; color:#7A7365; }
+  .date-box svg { flex-shrink:0; }
+  .panel .date-box svg { stroke:#8A8172; }
+  .panel.dark .date-box svg { stroke:#8A8172; }
+  .date-tilde { color:#A39A8B; }
+
+  .quick-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .q {
+    padding:6px 11px; border-radius:9px; font-size:11px; font-weight:500;
+    border:1px dashed;
+  }
+  .panel .q { border-color:#C7BEA8; color:#5F584D; background:rgba(192,138,46,.07); }
+  .panel.dark .q { border-color:#4A4234; color:#C9C0AE; background:rgba(192,138,46,.10); }
+
+  .note-inline { margin-top:12px; font-size:10.5px; line-height:1.65; }
+  .panel .note-inline { color:#8F887C; }
+  .panel.dark .note-inline { color:#7A7365; }
+
+  .row-title {
+    font-size:13px; font-weight:600; color:#8A8172;
+    margin: 6px 0 2px 2px; letter-spacing:.3px;
+  }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">顶栏按钮 · 辨识度改法</h1>
+<p class="page-sub">
+  三个按钮依次是<b>筛选 · 运行日志 · 设置</b>。<br>
+  下面是三种提高辨识度的做法，浅色和深色各来一遍。往下滚有说明和推荐。
+</p>
+
+<div class="grid">
+
+  <!-- ================= 浅色列 ================= -->
+  <div class="col">
+
+    <div class="row-title">浅色 · 宣纸底</div>
+
+    <!-- 方案 1 -->
+    <div class="card lightbg">
+      <div class="card-label">现状 · 细线灰图标</div>
+      <div class="bar ontint-light">
+        <span class="t1">彩票账本<span class="ver"> v1.4.1</span></span>
+        <span class="spacer"></span>
+        <span class="ic s1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg></span>
+        <span class="ic s1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></span>
+        <span class="ic s1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg></span>
+      </div>
+    </div>
+
+    <!-- 方案 2 -->
+    <div class="card lightbg">
+      <div class="card-label">方案 2 · 加底片 + 线条加深（推荐）</div>
+      <div class="bar ontint-light">
+        <span class="t1">彩票账本<span class="ver"> v1.4.1</span></span>
+        <span class="spacer"></span>
+        <span class="ic s2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg></span>
+        <span class="ic s2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></span>
+        <span class="ic s2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg></span>
+      </div>
+    </div>
+
+    <!-- 方案 3 -->
+    <div class="card lightbg">
+      <div class="card-label">方案 3 · 图标 + 文字标签</div>
+      <div class="bar ontint-light">
+        <span class="t1">彩票账本<span class="ver"> v1.4.1</span></span>
+        <span class="spacer"></span>
+        <span class="tabs">
+          <span class="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>筛选</span>
+          <span class="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>日志</span>
+          <span class="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg>设置</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- 方案 2 + 角标 -->
+    <div class="card lightbg">
+      <div class="card-label">方案 2 + 筛选生效时的角标</div>
+      <div class="bar ontint-light">
+        <span class="t1">彩票账本<span class="ver"> v1.4.1</span></span>
+        <span class="spacer"></span>
+        <span class="ic s2"><span class="dot">1</span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg></span>
+        <span class="ic s2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></span>
+        <span class="ic s2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= 深色列 ================= -->
+  <div class="col">
+
+    <div class="row-title">深色 · 墨夜底</div>
+
+    <div class="card darkbg">
+      <div class="card-label">现状 · 细线灰图标</div>
+      <div class="bar ontint-dark">
+        <span class="t1">彩票账本<span class="ver"> v1.4.1</span></span>
+        <span class="spacer"></span>
+        <span class="ic s1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg></span>
+        <span class="ic s1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></span>
+        <span class="ic s1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg></span>
+      </div>
+    </div>
+
+    <div class="card darkbg">
+      <div class="card-label">方案 2 · 加底片 + 线条提亮（推荐）</div>
+      <div class="bar ontint-dark">
+        <span class="t1">彩票账本<span class="ver"> v1.4.1</span></span>
+        <span class="spacer"></span>
+        <span class="ic s2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg></span>
+        <span class="ic s2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></span>
+        <span class="ic s2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg></span>
+      </div>
+    </div>
+
+    <div class="card darkbg">
+      <div class="card-label">方案 3 · 图标 + 文字标签</div>
+      <div class="bar ontint-dark">
+        <span class="t1">彩票账本<span class="ver"> v1.4.1</span></span>
+        <span class="spacer"></span>
+        <span class="tabs">
+          <span class="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>筛选</span>
+          <span class="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>日志</span>
+          <span class="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg>设置</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="card darkbg">
+      <div class="card-label">方案 2 + 筛选生效时的角标</div>
+      <div class="bar ontint-dark">
+        <span class="t1">彩票账本<span class="ver"> v1.4.1</span></span>
+        <span class="spacer"></span>
+        <span class="ic s2"><span class="dot">1</span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg></span>
+        <span class="ic s2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></span>
+        <span class="ic s2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"/></svg></span>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="foot">
+
+  <h3>先澄清一件事：那个红点不是我该做的功能</h3>
+  <ul>
+    <li>你截图里那颗红底白字的「2」<b>是我在原型里凭空加的装饰</b>，想表现"有 2 张票要处理"。
+      你没有要求过这个功能 —— 这是我的错，比做得丑更糟，因为它会让看原型的人以为真有这功能。</li>
+    <li><b>App 里现在只有「筛选」按钮有角标</b>，含义完全不同：它显示的是
+      <b>当前生效的筛选条件数量</b>（比如同时选了"双色球 + 已中奖"，就显示 2）。
+      这个角标是有用的 —— 否则用户看到列表变短了会以为票丢了。</li>
+    <li>所以我的原型里那个角标<b>以后只画在筛选按钮上</b>，而且只在筛选真的生效时才出现。</li>
+  </ul>
+
+  <h3>为什么现在辨识度低 —— 三个具体原因</h3>
+  <ul>
+    <li><b>线条太细：</b>默认图标是 24dp、线宽约 1.7px。放在深色底上细线会"失焦"，
+      看起来像糊了一层灰。</li>
+    <li><b>颜色太淡：</b>用的是 <code>onSurfaceVariant</code>，在深色模式下是
+      <code>#B0A899</code>（偏暗的暖灰）。它跟背景 <code>#131210</code> 亮度差不够，
+      所以"存在感"很弱。</li>
+    <li><b>没有落点：</b>三个图标都是"裸"在背景上的，没有任何视觉容器。
+      在浅色底上还行，深色底上就飘。</li>
+  </ul>
+
+  <h3>方案 2 的改法（我的推荐）</h3>
+  <ul>
+    <li><b>加一层半透明底片：</b>38dp 圆角方块，浅色用 <code>rgba(28,26,23,.055)</code>、
+      深色用 <code>rgba(237,231,220,.09)</code>。
+      这一层不是装饰 —— 它给图标一个<b>落点</b>，让"这里可以点"变得明确。</li>
+    <li><b>线条加粗到 2.1：</b>只加 0.4px，但在深色底上差别很大。</li>
+    <li><b>颜色提到正文级：</b>浅色用 <code>#2A2520</code>、深色用 <code>#EDE7DC</code>，
+      也就是跟标题同级的亮度。图标本来就是"可操作"的，不该比正文还淡。</li>
+    <li>三个图标<b>间距加大</b>（38dp 的容器 + 6dp 间隔），互相不挤。</li>
+  </ul>
+
+  <h3>方案 3 是备选：直接加文字</h3>
+  <ul>
+    <li>把三个图标做成「图标 + 文字」的胶囊：<b>筛选 · 日志 · 设置</b>。
+      辨识度最高 —— 不用猜图标什么意思。</li>
+    <li>代价：占的横向空间大了约一倍，而且跟"账本"这个偏克制的调性相比有点吵。</li>
+    <li><b>折中做法：</b>平时只用图标（方案 2），但对"日志"这种不容易一眼看懂的，
+      可以在首次进入时给一次文字提示。不过我觉得没必要，加底片已经够清楚了。</li>
+  </ul>
+
+  <h3>顺带一提：三个按钮的顺序</h3>
+  <ul>
+    <li>你截图里是 <b>筛选 · 日志 · 设置</b>，但 App 里现在是
+      <b>筛选 · 统计报表 · 日志 · 设置</b>（四个，中间那个是报表）。</li>
+    <li>如果你希望顶栏只留三个、把「统计报表」挪进别处（比如首页的某张卡上），
+      跟我说一声，这个也可以调。</li>
+  </ul>
+
+</div>
+
+
+<h1 class="divider-title">第二件事：筛选里加「按日期」</h1>
+<p class="divider-sub">
+  你提的两个都要：<b>自己选一段日期</b>，以及<b>点现成的快捷段</b>。<br>
+  下面浅色 / 深色各画一遍，注意看它跟现有「彩种 / 状态 / 关键词」三行的关系。
+</p>
+
+<div class="grid">
+
+  <!-- 浅色 -->
+  <div class="col">
+    <div class="row-title">浅色 · 筛选面板（加了日期行）</div>
+    <div class="panel">
+      <div class="p-label">彩种</div>
+      <div class="chips">
+        <span class="chip on">全部</span><span class="chip">双色球</span><span class="chip">大乐透</span>
+      </div>
+
+      <div class="p-label" style="margin-top:14px">状态</div>
+      <div class="chips">
+        <span class="chip on">全部</span><span class="chip">待开奖</span><span class="chip">已中奖</span>
+        <span class="chip">未中奖</span><span class="chip">待兑奖</span><span class="chip">已兑奖</span>
+        <span class="chip">已过期</span>
+      </div>
+
+      <div class="p-label" style="margin-top:14px">开奖日期</div>
+      <div class="chips">
+        <span class="chip">不限</span><span class="chip on">近 3 个月</span>
+      </div>
+      <div class="date-row">
+        <span class="date-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+          2026-06-27
+        </span>
+        <span class="date-tilde">→</span>
+        <span class="date-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+          2026-09-27
+        </span>
+      </div>
+      <div class="quick-row">
+        <span class="q">上月</span><span class="q">近 3 个月</span><span class="q">今年上半年</span>
+        <span class="q">今年下半年</span><span class="q">今年</span>
+      </div>
+      <div class="note-inline">
+        上方和下方两条日期框 = 自己选；虚线的快速段点一下就把两条日期框填好。<br>
+        排序已是「开奖日期倒序」，所以按日期筛出来的就是时间上连着的一片。
+      </div>
+    </div>
+  </div>
+
+  <!-- 深色 -->
+  <div class="col">
+    <div class="row-title">深色 · 筛选面板（加了日期行）</div>
+    <div class="panel dark">
+      <div class="p-label">彩种</div>
+      <div class="chips">
+        <span class="chip on">全部</span><span class="chip">双色球</span><span class="chip">大乐透</span>
+      </div>
+
+      <div class="p-label" style="margin-top:14px">状态</div>
+      <div class="chips">
+        <span class="chip on">全部</span><span class="chip">待开奖</span><span class="chip">已中奖</span>
+        <span class="chip">未中奖</span><span class="chip">待兑奖</span><span class="chip">已兑奖</span>
+        <span class="chip">已过期</span>
+      </div>
+
+      <div class="p-label" style="margin-top:14px">开奖日期</div>
+      <div class="chips">
+        <span class="chip">不限</span><span class="chip on">近 3 个月</span>
+      </div>
+      <div class="date-row">
+        <span class="date-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+          2026-06-27
+        </span>
+        <span class="date-tilde">→</span>
+        <span class="date-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+          2026-09-27
+        </span>
+      </div>
+      <div class="quick-row">
+        <span class="q">上月</span><span class="q">近 3 个月</span><span class="q">今年上半年</span>
+        <span class="q">今年下半年</span><span class="q">今年</span>
+      </div>
+      <div class="note-inline">
+        上方和下方两条日期框 = 自己选；虚线的快速段点一下就把两条日期框填好。<br>
+        排序已是「开奖日期倒序」，所以按日期筛出来的就是时间上连着的一片。
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">
+  <h3>关于「设置」图标看起来像亮度图标</h3>
+  <ul>
+    <li>你说得对，而且是<b>我的错</b>：原型里画的其实是「一个圆 + 一圈放射线」——
+      那在几乎所有设计系统里都是<b>亮度 / 太阳</b>的意思，不是设置。</li>
+    <li>真正的设置图标是<b>齿轮</b>：一个带齿的轮廓 + 中间一个圆孔。
+      齿是「外轮廓上的一圈凸起」，不是「从中心射出去的线」——
+      这两个东西在小尺寸下差别没多大，但语义完全是两回事。</li>
+    <li>App 里用的是官方 Material 图标 <code>Icons.Default.Settings</code>，<b>本来就是一个正规齿轮</b>，
+      所以装到手机上不会看到太阳。是原型画错了，不是 App 错了。</li>
+    <li>这一版原型已经把三个图标全部换成齿轮，你再对一眼。</li>
+  </ul>
+
+  <h3>日期筛选的设计口径（定下来我就照这个写代码）</h3>
+  <ul>
+    <li><b>筛的是「开奖日期」，不是「录入时间」。</b>
+      理由：列表本来就按开奖日期倒序排；用录入时间筛会出现「按日期筛了但列表顺序对不上」的割裂感。
+      而且补录往期票很常见，录入时间和实际购彩时间能差很远。</li>
+    <li><b>快捷段是「填日期框」而不是「另一套条件」。</b>
+      点「近 3 个月」以后，上下两个日期框会真的变成 2026-06-27 → 2026-09-27。
+      这样只有一个真相来源，不会出现「选了快捷段但我又改了日期，到底听谁的」。</li>
+    <li><b>五个快捷段的口径：</b>
+      <ul>
+        <li><b>上月</b> = 上一个完整自然月（9 月点它就是 8/1 ~ 8/31）</li>
+        <li><b>近 3 个月</b> = 今天往前推 3 个月到今天（滚动窗口，不是整月）</li>
+        <li><b>今年上半年</b> = 1/1 ~ 6/30</li>
+        <li><b>今年下半年</b> = 7/1 ~ 12/31（下半年还没到的部分当然筛不出票，但框就是这个范围）</li>
+        <li><b>今年</b> = 1/1 ~ 12/31</li>
+      </ul>
+    </li>
+    <li>你说的是「<b>上个月</b>」，我按<b>完整自然月</b>理解（8/1~8/31 那种）；如果你的意思是
+      「今天往前推一个月」这种滚动窗口，说一声，改一行就行。</li>
+  </ul>
+</div>
+
+</body>
+</html>

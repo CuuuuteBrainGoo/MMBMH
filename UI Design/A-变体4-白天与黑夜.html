@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>变体 4 · 白天与黑夜</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  /* ============================================================
+     变体 4（深色卡纸）的浅色 / 深色两套
+     关键差异都写在页面下方的说明里
+     ============================================================ */
+
+  /* —— 浅色模式的纸 —— */
+  .light {
+    --bg:      #F7F3EA;   /* 宣纸 */
+    --card:    #FFFDF8;   /* 卡片纸 */
+    --ink:     #1C1A17;
+    --ink-2:   #5A544B;
+    --ink-3:   #8F887C;
+    --line:    #E2DBCB;
+    --divider: #E5DDCB;
+    --prize:   #C0392B;
+    --spend:   #2E7D5B;
+    --warn:    #C08A2E;
+    --expired: #7B3FA0;
+    --ball-red: #C0392B;
+    --ball-blue:#2C6FB5;
+    /* 主账深色卡纸 */
+    --hero-bg:   #2A2520;
+    --hero-ink:  #EDE6D8;
+    --hero-sub:  #A29A8C;
+    --hero-line: rgba(237,230,216,.11);
+    --hero-inner:rgba(237,230,216,.10);
+    --hero-spend:#7FCBA8;
+    --hero-prize:#FF8574;
+    --hero-gold: #E0B45C;
+    --hero-purple:#C39BE0;
+    --welfare-bg:  rgba(192,138,46,.10);
+    --welfare-bd:  rgba(192,138,46,.22);
+    --welfare-ink: #8A6420;
+    --fab: linear-gradient(160deg,#2A2520 0%,#1A1712 100%);
+    --fab-ink:#F2EDE3;
+  }
+
+  /* —— 深色模式（新做的一套） —— */
+  .dark {
+    --bg:      #131210;   /* 比现在的 #14120F 再深一点，给卡片留出层次 */
+    --card:    #1F1D1A;   /* 卡片比背景亮 —— 深色模式下靠"亮"来浮起 */
+    --ink:     #EDE7DC;
+    --ink-2:   #B0A899;
+    --ink-3:   #7A7365;
+    --line:    #302C26;
+    --divider: #2E2A24;
+    /* ★ 语义色全部提亮 —— 这是黑夜模式最关键的改动 */
+    --prize:   #FF6B5A;   /* 中奖红：从 #C0392B 提到 #FF6B5A */
+    --spend:   #4FC58F;   /* 支出绿：从 #2E7D5B 提到 #4FC58F（原来最糟） */
+    --warn:    #E5B455;   /* 金：提到 #E5B455 */
+    --expired: #B98AE0;   /* 紫：提到 #B98AE0 */
+    --ball-red: #E0503F;
+    --ball-blue:#4E8AE0;
+    /* 主账在黑夜模式改为"更亮的卡纸" —— 见下方说明 */
+    --hero-bg:   #2B2723;
+    --hero-ink:  #F2ECE0;
+    --hero-sub:  #A69D8E;
+    --hero-line: rgba(242,236,224,.12);
+    --hero-inner:rgba(242,236,224,.12);
+    --hero-spend:#6FD9A8;
+    --hero-prize:#FF8A78;
+    --hero-gold: #EBC671;
+    --hero-purple:#C9A2EC;
+    --welfare-bg:  rgba(229,180,85,.12);
+    --welfare-bd:  rgba(229,180,85,.26);
+    --welfare-ink: #D9B876;
+    --fab: linear-gradient(160deg,#4A423A 0%,#332E28 100%);
+    --fab-ink:#F5F0E6;
+  }
+
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background:#E8E2D6; color:#1C1A17;
+    padding:32px 20px 70px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+
+  .page-title { text-align:center; margin-bottom:7px; font-size:23px; font-weight:600; letter-spacing:.4px; }
+  .page-sub { text-align:center; margin-bottom:30px; font-size:13px; color:#6B6357; line-height:1.75; max-width:700px; }
+
+  .row { display:flex; gap:28px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+
+  .col { display:flex; flex-direction:column; gap:13px; align-items:center; }
+
+  .phone {
+    width:344px; background:var(--bg);
+    border-radius:30px; overflow:hidden;
+    display:flex; flex-direction:column;
+    border:1px solid rgba(0,0,0,.10);
+  }
+  .light .phone { border-color:#D8D0BF; box-shadow:0 10px 34px rgba(60,50,35,.13); }
+  .dark .phone  { border-color:#2A2A30; box-shadow:0 10px 34px rgba(0,0,0,.42); }
+
+  .phone-label {
+    text-align:center; font-size:12px; font-weight:600;
+    padding:12px 0 10px; letter-spacing:.6px;
+  }
+  .light .phone-label { color:#7A7266; background:#E5DECD; border-bottom:1px solid #D8D0BF; }
+  .dark  .phone-label { color:#9A9288; background:#1C1A18; border-bottom:1px solid #2A2A30; }
+
+  .statusbar {
+    height:30px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 18px; font-size:11px; color:var(--ink-2); font-weight:500;
+  }
+  .topbar { display:flex; align-items:center; gap:10px; padding:4px 16px 14px; }
+  .topbar h1 { font-size:19px; font-weight:600; letter-spacing:.3px; color:var(--ink); }
+  .topbar .ver { font-size:10px; color:var(--ink-3); font-weight:400; }
+  .topbar .spacer { flex:1; }
+  .icon-btn {
+    width:32px; height:32px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--ink-2); position:relative; font-size:14px;
+  }
+  .badge-dot {
+    position:absolute; top:-1px; right:-2px; min-width:15px; height:15px; padding:0 4px;
+    border-radius:8px; background:var(--prize); color:#fff;
+    font-size:9px; line-height:15px; text-align:center; font-weight:600;
+  }
+  .dark .badge-dot { color:#131210; }
+
+  .body { padding:0 14px 20px; display:flex; flex-direction:column; gap:11px; }
+
+  /* ===== 主账 · 深色卡纸（变体 4） ===== */
+  .hero {
+    background: var(--hero-bg);
+    border-radius:20px; padding:20px 20px 18px;
+    color: var(--hero-ink);
+    position:relative;
+    background-image:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.012) 0 2px, transparent 2px 4px);
+  }
+  .hero::after {
+    content:''; position:absolute; inset:7px; border-radius:14px;
+    border:1px solid var(--hero-inner);
+    pointer-events:none;
+  }
+  .hero-label { font-size:11px; color:var(--hero-sub); letter-spacing:1.4px; margin-bottom:8px; }
+  .hero-num {
+    font-size:42px; font-weight:700; letter-spacing:-1.2px; line-height:1;
+    font-variant-numeric:tabular-nums;
+  }
+  .hero-num .cur { font-size:22px; font-weight:500; opacity:.75; margin-right:2px; }
+  .hero-num.neg { color: var(--hero-spend); }
+  .dv { height:1px; background:var(--hero-line); margin:16px 0 13px; }
+  .hero-row { display:flex; gap:6px; }
+  .hero-cell { flex:1; }
+  .hero-cell .k { font-size:10px; color:var(--hero-sub); margin-bottom:4px; letter-spacing:.4px; }
+  .hero-cell .v { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .v-spend{color:var(--hero-spend)} .v-prize{color:var(--hero-prize)}
+  .v-gold{color:var(--hero-gold)} .v-purple{color:var(--hero-purple)}
+
+  /* ===== 公益金 ===== */
+  .welfare {
+    display:flex; align-items:center; gap:8px;
+    background:var(--welfare-bg); border:1px solid var(--welfare-bd);
+    border-radius:12px; padding:9px 12px; font-size:11px; color:var(--welfare-ink);
+  }
+  .welfare .strong { font-weight:600; }
+
+  /* ===== 指标 ===== */
+  .metrics { display:flex; gap:8px; }
+  .metric {
+    flex:1; background:var(--card); border:1px solid var(--line);
+    border-radius:13px; padding:11px 12px;
+  }
+  .metric .k { font-size:10px; color:var(--ink-3); margin-bottom:5px; }
+  .metric .v { font-size:17px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--ink); }
+  .metric .v.warn { color:var(--warn); }
+
+  /* ===== 提示 ===== */
+  .banner {
+    display:flex; align-items:center; gap:9px;
+    background:var(--card); border:1px solid var(--line);
+    border-left:3px solid var(--prize);
+    border-radius:11px; padding:10px 12px; font-size:11.5px; color:var(--ink-2);
+  }
+  .banner .go { margin-left:auto; font-size:11px; font-weight:600; color:var(--spend); white-space:nowrap; }
+
+  .sec-head { display:flex; align-items:baseline; gap:8px; margin-top:3px; }
+  .sec-head h2 { font-size:14px; font-weight:600; color:var(--ink); }
+  .sec-head .count { font-size:11px; color:var(--ink-3); }
+
+  /* ===== 彩票卡 ===== */
+  .ticket {
+    background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:13px 14px 13px 18px;
+    position:relative; overflow:hidden;
+  }
+  .ticket::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--ball-red); }
+  .ticket.dlt::before { background:var(--ball-blue); }
+  .ticket-top { display:flex; align-items:center; gap:7px; margin-bottom:9px; }
+  .type-tag {
+    font-size:11px; font-weight:600; padding:2.5px 8px; border-radius:6px;
+    background:rgba(192,57,43,.12); color:var(--prize);
+  }
+  .dark .type-tag { background:rgba(255,107,90,.14); }
+  .ticket.dlt .type-tag { background:rgba(44,111,181,.12); color:var(--ball-blue); }
+  .dark .ticket.dlt .type-tag { background:rgba(78,138,224,.16); }
+  .issue { font-size:11.5px; color:var(--ink-2); font-variant-numeric:tabular-nums; }
+  .status-tag { margin-left:auto; font-size:10px; font-weight:600; padding:3px 8px; border-radius:20px; }
+  .st-won { background:rgba(192,57,43,.12); color:var(--prize); }
+  .dark .st-won { background:rgba(255,107,90,.14); }
+  .ticket-meta { font-size:11px; color:var(--ink-3); margin-bottom:10px; }
+  .balls { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:11px; }
+  .ball {
+    width:24px; height:24px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11.5px; font-weight:600; color:#fff;
+    background:var(--ball-red); font-variant-numeric:tabular-nums;
+  }
+  .ball.blue { background:var(--ball-blue); }
+  .ticket-bottom {
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding-top:9px; border-top:1px dashed var(--line);
+  }
+  .ticket-bottom .label { font-size:10.5px; color:var(--ink-3); }
+  .amount { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.4px; }
+  .amt-won { color:var(--prize); }
+
+  .fab {
+    margin:4px 14px 14px; height:48px; border-radius:15px;
+    background:var(--fab); color:var(--fab-ink);
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    font-size:14.5px; font-weight:600; letter-spacing:.4px;
+  }
+
+  /* —— 色板对比表 —— */
+  .swatch-table {
+    max-width:1000px; width:100%; margin-top:36px;
+    background:#FFFDF8; border:1px solid #DED6C6; border-radius:18px;
+    padding:24px 26px; overflow:hidden;
+  }
+  .swatch-table h3 { font-size:15px; font-weight:600; margin-bottom:16px; }
+  .swatch-row {
+    display:grid; grid-template-columns: 96px 1fr 1fr; gap:14px;
+    align-items:center; padding:11px 0; border-bottom:1px solid #EDE6D8;
+  }
+  .swatch-row:last-child { border-bottom:none; }
+  .swatch-row.head { font-size:11.5px; font-weight:600; color:#8A8172; padding-bottom:9px; }
+  .swatch-name { font-size:12.5px; font-weight:500; }
+  .sw-cell { display:flex; align-items:center; gap:9px; }
+  .sw-chip { width:26px; height:26px; border-radius:8px; flex-shrink:0; border:1px solid rgba(0,0,0,.08); }
+  .sw-code { font-family:ui-monospace,Menlo,monospace; font-size:10.5px; color:#7A7266; }
+  .sw-demo { font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; }
+
+  .notes {
+    max-width:1000px; width:100%; margin-top:22px;
+    background:#FFFDF8; border:1px solid #DED6C6; border-radius:18px;
+    padding:24px 26px; font-size:13px; line-height:1.8; color:#4A4439;
+  }
+  .notes h3 { font-size:15px; font-weight:600; margin-bottom:12px; color:#1C1A17; }
+  .notes h3:not(:first-child) { margin-top:22px; }
+  .notes ul { padding-left:20px; }
+  .notes li { margin-bottom:8px; }
+  .notes b { color:#1C1A17; }
+  code { font-family:ui-monospace,Menlo,monospace; font-size:12px; background:#EDE6D8; padding:1px 5px; border-radius:4px; }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">变体 4 · 白天与黑夜</h1>
+<p class="page-sub">
+  左是浅色（你刚选的深色卡纸），右是新做的黑夜模式。<br>
+  下面有色板对照表和三条关键改法的说明 —— 尤其是<b>语义色为什么要全部提亮</b>。
+</p>
+
+<div class="row">
+
+  <!-- ==================== 浅色 ==================== -->
+  <div class="col light">
+    <div class="phone">
+      <div class="phone-label">浅色 · 宣纸</div>
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ ▮</span></div>
+      <div class="topbar">
+        <h1>彩票账本<span class="ver">v1.4.1</span></h1>
+        <div class="spacer"></div>
+        <div class="icon-btn">☰<span class="badge-dot">2</span></div>
+        <div class="icon-btn">▤</div>
+        <div class="icon-btn">⚙</div>
+      </div>
+      <div class="body">
+
+        <div class="hero">
+          <div class="hero-label">净 收 支</div>
+          <div class="hero-num neg"><span class="cur">−¥</span>483.00</div>
+          <div class="dv"></div>
+          <div class="hero-row">
+            <div class="hero-cell"><div class="k">花出去</div><div class="v v-spend">¥1,240.00</div></div>
+            <div class="hero-cell"><div class="k">中奖</div><div class="v v-prize">¥757.00</div></div>
+          </div>
+          <div class="dv"></div>
+          <div class="hero-row">
+            <div class="hero-cell"><div class="k">已兑</div><div class="v v-gold">¥520.00</div></div>
+            <div class="hero-cell"><div class="k">待兑</div><div class="v v-gold">¥237.00</div></div>
+            <div class="hero-cell"><div class="k">过期</div><div class="v v-purple">−¥80.00</div></div>
+          </div>
+        </div>
+
+        <div class="welfare"><span>公益金</span><span class="strong">¥446.40</span><span style="opacity:.7">· 票面的 36%</span></div>
+
+        <div class="metrics">
+          <div class="metric"><div class="k">已入账</div><div class="v">23</div></div>
+          <div class="metric"><div class="k">总注数</div><div class="v">46</div></div>
+          <div class="metric"><div class="k">待开奖</div><div class="v warn">3</div></div>
+        </div>
+
+        <div class="banner"><span>2 张票中了奖，去确认金额</span><span class="go">去处理 ›</span></div>
+
+        <div class="sec-head"><h2>购彩记录</h2><span class="count">共 23 张</span></div>
+
+        <div class="ticket">
+          <div class="ticket-top"><span class="type-tag">双色球</span><span class="issue">26104 期</span><span class="status-tag st-won">中奖</span></div>
+          <div class="ticket-meta">开奖 2026-09-26 · 2 注 × 3 倍</div>
+          <div class="balls">
+            <span class="ball">03</span><span class="ball">12</span><span class="ball">18</span>
+            <span class="ball">25</span><span class="ball">29</span><span class="ball">33</span><span class="ball blue">07</span>
+          </div>
+          <div class="ticket-bottom"><span class="label">中奖金额</span><span class="amount amt-won">¥ 300.00</span></div>
+        </div>
+
+        <div class="ticket dlt">
+          <div class="ticket-top"><span class="type-tag">大乐透</span><span class="issue">26112 期</span><span class="status-tag" style="background:rgba(192,138,46,.15);color:var(--warn)">待开奖</span></div>
+          <div class="ticket-meta">开奖 2026-09-29 · 1 注 · 追加</div>
+          <div class="balls">
+            <span class="ball">05</span><span class="ball">11</span><span class="ball">19</span>
+            <span class="ball">27</span><span class="ball">34</span><span class="ball blue">02</span><span class="ball blue">09</span>
+          </div>
+          <div class="ticket-bottom"><span class="label">已花费</span><span class="amount" style="color:var(--ink-3);font-weight:500;font-size:14px">¥ 3.00</span></div>
+        </div>
+
+      </div>
+      <div class="fab">＋ 录入彩票</div>
+    </div>
+  </div>
+
+  <!-- ==================== 深色 ==================== -->
+  <div class="col dark">
+    <div class="phone">
+      <div class="phone-label">深色 · 墨夜</div>
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ ▮</span></div>
+      <div class="topbar">
+        <h1>彩票账本<span class="ver">v1.4.1</span></h1>
+        <div class="spacer"></div>
+        <div class="icon-btn">☰<span class="badge-dot">2</span></div>
+        <div class="icon-btn">▤</div>
+        <div class="icon-btn">⚙</div>
+      </div>
+      <div class="body">
+
+        <div class="hero">
+          <div class="hero-label">净 收 支</div>
+          <div class="hero-num neg"><span class="cur">−¥</span>483.00</div>
+          <div class="dv"></div>
+          <div class="hero-row">
+            <div class="hero-cell"><div class="k">花出去</div><div class="v v-spend">¥1,240.00</div></div>
+            <div class="hero-cell"><div class="k">中奖</div><div class="v v-prize">¥757.00</div></div>
+          </div>
+          <div class="dv"></div>
+          <div class="hero-row">
+            <div class="hero-cell"><div class="k">已兑</div><div class="v v-gold">¥520.00</div></div>
+            <div class="hero-cell"><div class="k">待兑</div><div class="v v-gold">¥237.00</div></div>
+            <div class="hero-cell"><div class="k">过期</div><div class="v v-purple">−¥80.00</div></div>
+          </div>
+        </div>
+
+        <div class="welfare"><span>公益金</span><span class="strong">¥446.40</span><span style="opacity:.7">· 票面的 36%</span></div>
+
+        <div class="metrics">
+          <div class="metric"><div class="k">已入账</div><div class="v">23</div></div>
+          <div class="metric"><div class="k">总注数</div><div class="v">46</div></div>
+          <div class="metric"><div class="k">待开奖</div><div class="v warn">3</div></div>
+        </div>
+
+        <div class="banner"><span>2 张票中了奖，去确认金额</span><span class="go">去处理 ›</span></div>
+
+        <div class="sec-head"><h2>购彩记录</h2><span class="count">共 23 张</span></div>
+
+        <div class="ticket">
+          <div class="ticket-top"><span class="type-tag">双色球</span><span class="issue">26104 期</span><span class="status-tag st-won">中奖</span></div>
+          <div class="ticket-meta">开奖 2026-09-26 · 2 注 × 3 倍</div>
+          <div class="balls">
+            <span class="ball">03</span><span class="ball">12</span><span class="ball">18</span>
+            <span class="ball">25</span><span class="ball">29</span><span class="ball">33</span><span class="ball blue">07</span>
+          </div>
+          <div class="ticket-bottom"><span class="label">中奖金额</span><span class="amount amt-won">¥ 300.00</span></div>
+        </div>
+
+        <div class="ticket dlt">
+          <div class="ticket-top"><span class="type-tag">大乐透</span><span class="issue">26112 期</span><span class="status-tag" style="background:rgba(229,180,85,.15);color:var(--warn)">待开奖</span></div>
+          <div class="ticket-meta">开奖 2026-09-29 · 1 注 · 追加</div>
+          <div class="balls">
+            <span class="ball">05</span><span class="ball">11</span><span class="ball">19</span>
+            <span class="ball">27</span><span class="ball">34</span><span class="ball blue">02</span><span class="ball blue">09</span>
+          </div>
+          <div class="ticket-bottom"><span class="label">已花费</span><span class="amount" style="color:var(--ink-3);font-weight:500;font-size:14px">¥ 3.00</span></div>
+        </div>
+
+      </div>
+      <div class="fab">＋ 录入彩票</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== 色板对照 ==================== -->
+<div class="swatch-table">
+  <h3>语义色对照 —— 深色模式为什么要全部提亮</h3>
+
+  <div class="swatch-row head">
+    <div>语义</div>
+    <div>浅色（宣纸底）</div>
+    <div>深色（墨夜底）</div>
+  </div>
+
+  <div class="swatch-row">
+    <div class="swatch-name">中奖红</div>
+    <div class="sw-cell">
+      <div class="sw-chip" style="background:#C0392B"></div>
+      <div><div class="sw-code">#C0392B</div><div class="sw-demo" style="color:#C0392B">+¥300.00</div></div>
+    </div>
+    <div class="sw-cell">
+      <div class="sw-chip" style="background:#FF6B5A"></div>
+      <div><div class="sw-code">#FF6B5A</div><div class="sw-demo" style="color:#FF6B5A">+¥300.00</div></div>
+    </div>
+  </div>
+
+  <div class="swatch-row">
+    <div class="swatch-name">支出绿</div>
+    <div class="sw-cell">
+      <div class="sw-chip" style="background:#2E7D5B"></div>
+      <div><div class="sw-code">#2E7D5B</div><div class="sw-demo" style="color:#2E7D5B">−¥1,240</div></div>
+    </div>
+    <div class="sw-cell">
+      <div class="sw-chip" style="background:#4FC58F"></div>
+      <div><div class="sw-code">#4FC58F</div><div class="sw-demo" style="color:#4FC58F">−¥1,240</div></div>
+    </div>
+  </div>
+
+  <div class="swatch-row">
+    <div class="swatch-name">待确认金</div>
+    <div class="sw-cell">
+      <div class="sw-chip" style="background:#C08A2E"></div>
+      <div><div class="sw-code">#C08A2E</div><div class="sw-demo" style="color:#C08A2E">待开奖 3</div></div>
+    </div>
+    <div class="sw-cell">
+      <div class="sw-chip" style="background:#E5B455"></div>
+      <div><div class="sw-code">#E5B455</div><div class="sw-demo" style="color:#E5B455">待开奖 3</div></div>
+    </div>
+  </div>
+
+  <div class="swatch-row">
+    <div class="swatch-name">过期紫</div>
+    <div class="sw-cell">
+      <div class="sw-chip" style="background:#7B3FA0"></div>
+      <div><div class="sw-code">#7B3FA0</div><div class="sw-demo" style="color:#7B3FA0">−¥80.00</div></div>
+    </div>
+    <div class="sw-cell">
+      <div class="sw-chip" style="background:#B98AE0"></div>
+      <div><div class="sw-code">#B98AE0</div><div class="sw-demo" style="color:#B98AE0">−¥80.00</div></div>
+    </div>
+  </div>
+
+  <div class="swatch-row">
+    <div class="swatch-name">主账卡纸</div>
+    <div class="sw-cell">
+      <div class="sw-chip" style="background:#2A2520"></div>
+      <div><div class="sw-code">#2A2520</div><div style="font-size:11px;color:#8A8172">比背景深 → 压得住</div></div>
+    </div>
+    <div class="sw-cell">
+      <div class="sw-chip" style="background:#2B2723"></div>
+      <div><div class="sw-code">#2B2723</div><div style="font-size:11px;color:#8A8172">比背景亮 → 浮得起</div></div>
+    </div>
+  </div>
+
+  <div class="swatch-row">
+    <div class="swatch-name">页面背景</div>
+    <div class="sw-cell">
+      <div class="sw-chip" style="background:#F7F3EA"></div>
+      <div><div class="sw-code">#F7F3EA</div><div style="font-size:11px;color:#8A8172">宣纸（很亮）</div></div>
+    </div>
+    <div class="sw-cell">
+      <div class="sw-chip" style="background:#131210"></div>
+      <div><div class="sw-code">#131210</div><div style="font-size:11px;color:#8A8172">墨夜（很深）</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 说明 ==================== -->
+<div class="notes">
+
+  <h3>关键改动一：四个语义色全部提亮（这是必须做的）</h3>
+  <ul>
+    <li><b>为什么必须提亮：</b>颜色在深底上的可读性，取决于它和背景的<b>亮度差</b>。
+      现在的四个色是按「配浅底」挑的 —— 它们都偏暗（为了在白纸上显得稳重）。
+      直接搬到近黑的背景上，亮度差不够，就会"沉"进去。</li>
+    <li><b>最糟的是支出墨绿 <code>#2E7D5B</code></b>：它本来就很暗，放在 <code>#14120F</code> 上几乎糊成一块。
+      提到 <code>#4FC58F</code> 才看得清。</li>
+    <li><b>中奖红 <code>#C0392B</code> 也一样</b>：它是暗红，深底上会显得发乌。
+      提到 <code>#FF6B5A</code> 才有"红"的感觉。</li>
+    <li><b>色相一个都没动</b>，只是把明度提上去 —— 所以红还是那个红、绿还是那个绿，
+      用户不需要重新建立映射。</li>
+  </ul>
+
+  <h3>关键改动二：主账卡纸要"反过来"—— 从比背景深改成比背景亮</h3>
+  <ul>
+    <li>浅色模式下，深色卡纸靠<b>比背景深</b>来压住画面。</li>
+    <li>深色模式下背景本身就是深的，这条路走不通了 —— 所有深色都会糊在一起。</li>
+    <li>所以深色模式下主账卡纸改成 <code>#2B2723</code>，<b>比背景 <code>#131210</code> 亮</b>。
+      在深色界面里，<b>"更亮"就是"更靠前"</b>，这个手法和浅色模式下的"更深"是等价的。</li>
+    <li>卡片本身（彩票卡、指标卡）也走同一条规则：比背景亮一点，浮起来。</li>
+  </ul>
+
+  <h3>关键改动三：内嵌细线要跟着换方向</h3>
+  <ul>
+    <li>浅色模式下，卡纸上的内嵌线是<b>浅色半透明</b>（<code>rgba(237,230,216,.10)</code>）——
+      在深色卡纸上加一点亮线，做出"压印"的感觉。</li>
+    <li>深色模式下这条线要<b>再亮一点</b>（<code>rgba(242,236,224,.12)</code>）——
+      因为整张卡都更亮了，线的对比度要跟上，否则会看不见。</li>
+  </ul>
+
+  <h3>还有一个要注意的：号码球的颜色</h3>
+  <ul>
+    <li>球体是<b>实心色块 + 白字</b>，在深色模式下直接用原来的暗红/暗蓝会显得脏。</li>
+    <li>所以球色也提亮：红 <code>#C0392B → #E0503F</code>、蓝 <code>#2C6FB5 → #4E8AE0</code>。</li>
+    <li>球上的字仍然是白色 —— 提亮后底色和白色的对比仍然够。</li>
+  </ul>
+
+  <h3>需要你定的一件事：录彩票按钮</h3>
+  <ul>
+    <li>浅色模式下它是深墨块（跟主账卡纸呼应）。</li>
+    <li>深色模式下如果还做深色，会融进背景看不见。</li>
+    <li><b>我这版的做法是把它改成暖灰渐变</b>（<code>#4A423A → #332E28</code>），
+      比背景亮、比主账卡纸更亮一点，这样它是页面上最"靠前"的元素 —— 正好符合"主按钮"的身份。</li>
+    <li>如果你觉得这样太弱，另一个选择是给它用<b>金色描边</b>，会更显眼但也会更抢。</li>
+  </ul>
+
+  <h3>什么不用改</h3>
+  <ul>
+    <li><b>居中提示条</b>（成功/失败/中性那个浮层）本来就是深灰底 + 米白字，
+      两种主题下都是"浮在最上面"，不受影响。</li>
+    <li><b>「号码撞大奖」彩蛋的紫</b>已经在两个模式间共用，够用。</li>
+    <li><b>字号、圆角、间距</b>完全不变 —— 主题只改颜色，不改布局。</li>
+  </ul>
+
+  <h3>落进代码时会怎么改</h3>
+  <ul>
+    <li>现在 <code>LedgerColors</code> 里的语义色是<b>写死的常量</b>，不跟主题走 ——
+      这就是为什么现在的深色模式是个半成品。</li>
+    <li>要改成<b>两个色组</b>：<code>LedgerColors.light</code> / <code>LedgerColors.dark</code>，
+      在 <code>LedgerTheme</code> 里按深浅选一组，通过 <code>CompositionLocal</code> 向下传。</li>
+    <li>这样界面上所有用到 <code>LedgerColors.Prize</code> 的地方<b>一行都不用改</b>，
+      自动跟着主题变。改的是底层那一个文件。</li>
+  </ul>
+
+</div>
+
+</body>
+</html>
