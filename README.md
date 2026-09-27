@@ -1,9 +1,30 @@
 # 彩票账本 · LotteryLedger
 
+[![最新版本](https://img.shields.io/github/v/release/CuuuuteBrainGoo/MMBMH?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=red)](https://github.com/CuuuuteBrainGoo/MMBMH/releases/latest)
+[![下载 APK](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-APK-red?logo=android&logoColor=white)](https://github.com/CuuuuteBrainGoo/MMBMH/releases/latest)
+[![更新时间](https://img.shields.io/github/release-date/CuuuuteBrainGoo/MMBMH?label=%E6%9C%80%E5%90%8E%E6%9B%B4%E6%96%B0)](https://github.com/CuuuuteBrainGoo/MMBMH/releases/latest)
+
 一个**纯本地**的彩票记账 App：拍票 → 多模态大模型认号码 → 程序在本机对奖、算盈亏。
 
 > 自己用的工具，做出来是因为市面上的彩票 App 要么在卖推荐、要么把数据传走。
 > 这个只做一件事：**记清楚我买了多少、中了多少、亏了多少。**
+
+---
+
+## 📲 想直接装？
+
+**不用看源码，去 [Releases 页面](https://github.com/CuuuuteBrainGoo/MMBMH/releases/latest) 下载就行：**
+
+| 文件 | 用途 |
+|---|---|
+| **`LotteryLedger-v1.5.0-release-signed.apk`**（13 MB） | **装这个** —— 体积小，无调试信息 |
+| `LotteryLedger-v1.5.0-debug-signed.apk`（20 MB） | 调试用，带完整日志 |
+
+> 手机上点开 APK 就能装，需要先允许「安装未知来源应用」。
+> 签名是 Android 默认调试证书，**适合自用，不适合上架应用商店。**
+
+⚠️ **装完第一件事**：去设置页配一个大模型 API Key，否则「拍照识别」用不了。
+**有免费的可以先试**，见下面 [「第一次配，选哪家」](#第一次配选哪家)。
 
 ---
 
@@ -227,15 +248,23 @@ App 支持 7 种接入方式，`设置 → 帮助` 里有逐步说明。**如果
 
 ## 安装包
 
-`apk/` 目录下是已签名的安装包。当前版本：
+**推荐从 [Releases 页面](https://github.com/CuuuuteBrainGoo/MMBMH/releases/latest) 下载** ——
+那里有版本号、更新时间和 Release Notes，点一下就能下。
 
-| 文件 | 用途 |
-|---|---|
-| `LotteryLedger-v1.5.0-release-signed.apk` | **装这个**（体积小，无调试信息） |
-| `LotteryLedger-v1.5.0-debug-signed.apk` | 调试用，带完整日志 |
+仓库里的 `apk/` 目录**只保留当前版本**做备份（历史版本会被 `.gitignore` 排除）。
+两个地方的文件是同一份，SHA-256 校验一致。
 
-安装前需要允许「安装未知来源应用」。签名是 Android 默认调试证书，
-**适合自用，不适合上架应用商店。**
+> 为什么历史版本不放仓库：git 会把这些二进制**永久留在历史里**
+> （删文件也删不掉 `.git` 里的对象），仓库会一路变肥、clone 越来越慢。
+> 所以策略是仓库只留最新版，历史版本走 Release 归档。
+
+### 签名说明
+
+签名是 **Android 默认调试证书**（`debug.keystore`）：
+
+- ✅ 自己装、发给朋友装 —— 没问题
+- ❌ 上架应用商店 —— 不行，需要正式签名证书
+- ⚠️ 换签名后**不能覆盖安装**，得先卸载（会清掉账本数据，**升级前先导出备份**）
 
 ---
 
