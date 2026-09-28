@@ -13,7 +13,13 @@ python F:\LottBuild\_secret_sentinel.py     # 必须看到 RESULT: CLEAN
   统一根因：**靠"记得要查什么"防守，而不是靠机制。列清单必漏清单。**
 - `.workbuddy/memory/*.md` **在仓库里** → 写复盘文档不许抄真实凭据
 - **绝不点 GitHub 的 unblock 按钮**；改本地历史（全链路）才是唯一正解
-- 远端 `https://github.com/CuuuuteBrainGoo/MMBMH.git`（已配 `http.proxy=127.0.0.1:10090`）
+- 远端 `https://github.com/CuuuuteBrainGoo/MMBMH.git`
+- ⚠️ **沙箱里推不上去 GitHub** —— 网络隔离：直连 443 超时，也**看不到宿主机的 mihomo**
+  （沙箱的 `127.0.0.1` 不是宿主机的，10090 在这边无监听）。
+  **别反复重试、别去扫端口，纯浪费轮次。**
+  **推送这最后一步由少爷在本机双击 `推送到GitHub.bat`** ——
+  那个脚本会自动探测本机代理端口并写进 git 配置。
+  AI 的职责到「**提交到本地 git** + 告诉少爷可以推了」为止。
 - 详见技能 `pre-push-secret-scrub`
 
 ## 版本号散落 4 处，升版必须同步改 ★
@@ -48,6 +54,8 @@ python F:\LottBuild\_secret_sentinel.py     # 必须看到 RESULT: CLEAN
 6. `_release_guard.py`（版本号跨文件一致性）
 7. 更新 `apk\真机验收清单.md`
 8. 写入 `memory\YYYY-MM-DD.md`
+9. **提交到本地 git**（跑哨兵 → `git add -A` → `git commit`）；
+   **推送由少爷双击 `推送到GitHub.bat`**（沙箱推不上去，见上）
 
 - **第 3 步是少爷亲定的**：修完 bug **不要默认打包**，先反馈「改了什么/怎么验证的」再问他。
   - 例外：能论证「打包对接下来工作有实质帮助」（典型：只有真机能验）可自行决定，**要说明为什么**
