@@ -151,6 +151,11 @@ python F:/LottBuild/_secret_sentinel.py "F:/Projects/MMBMH-mony mony back my hom
 - 批量删除 > 50 文件/轮会被拦；先试 `mv` 改名
 - `res/` 里**只能放 .xml 和 .png**（`.bak` 会让 aapt2 直接报错）
 - **判断后台任务死没死**：看①活进程 ②产物时间戳 ③日志结束标记。**别看日志尾巴**（正在写）
+- **跨工具传字符串，别用反斜杠字面量**（Windows 路径、`\n` 之类）：
+  「工具 → bash heredoc → python」这条链会**吃掉一层反斜杠**，同一段文本经
+  不同工具写进去，落地的层数不一样（2026-09-28 改哨兵 docstring 踩到：
+  `F:\LottBuild` 触发 `SyntaxWarning: invalid escape sequence`，Edit 改两轮才对）。
+  → 用**正斜杠**或 `chr(92)` 构造。**输出和输入都是失真通道，中间那层也在改数据。**
 
 ## 产品规则（不可擅改）
 
