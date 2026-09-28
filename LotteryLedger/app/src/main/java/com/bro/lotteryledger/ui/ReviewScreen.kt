@@ -50,6 +50,12 @@ fun ReviewScreen(
     onConfirmDistinct: () -> Unit,
     onCommit: () -> Unit,
     onDiscard: () -> Unit,
+    /**
+     * 把判重文案里的「数据库 id」换成「展示编号」（少爷 2026-09-27 要求）。
+     *
+     * 默认恒等函数 —— 这样任何不关心编号的调用点（包括预览/测试）行为完全不变。
+     */
+    formatReason: (String, Long?) -> String = { r, _ -> r },
     /** 顶栏返回键 / 系统返回键都走这里（统一二次确认） */
     onBack: () -> Unit = onDiscard
 ) {
@@ -74,11 +80,16 @@ fun ReviewScreen(
                     // 重复提示（§6.4）
                     when (entry.duplicate.status) {
                         DuplicateStatus.EXACT_DUPLICATE -> {
-                            BlockedBanner(entry.duplicate.reason)
+                            BlockedBanner(
+                                formatReason(entry.duplicate.reason, entry.duplicate.matchedTicketId)
+                            )
                         }
                         DuplicateStatus.POSSIBLE_DUPLICATE -> {
                             PossibleDupBanner(
-                                reason = entry.duplicate.reason,
+                                reason = formatReason(
+                                    entry.duplicate.reason,
+                                    entry.duplicate.matchedTicketId
+                                ),
                                 onDistinct = onConfirmDistinct
                             )
                         }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -63,7 +64,17 @@ fun TicketDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("票详情") },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("票详情")
+                        // 顶部就亮出编号（少爷 2026-09-27 要求）——
+                        // 从列表点进来第一眼要能确认「是不是我要找的那张」。
+                        detail.code?.let {
+                            Spacer(Modifier.width(8.dp))
+                            DetailCodeChip(it)
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "返回") }
                 }
@@ -126,6 +137,9 @@ fun TicketDetailScreen(
 
             // ---- 票面信息 ----
             Section("票面信息") {
+                // 展示编号放第一条 —— 这是用户报给开发者、或在列表里定位这张票用的
+                // 「门牌号」，跟下面那些票面印刷的编号不是一回事。
+                detail.code?.let { InfoRow("展示编号", "#$it") }
                 InfoRow("购彩时间", t.purchaseTime ?: "票面未印")
                 InfoRow("开奖日期", t.drawDate)
                 // ⚠️ 不能只写「复式」—— 组合票（单式 + 复式混合）会被说成整张都是复式。
@@ -536,8 +550,24 @@ private fun ResultLine(text: String, color: Color) {
 }
 
 @Composable
-private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth()) {
+private fun DetailCodeChip(code: Int) {
+    Surface(
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.14f),
+        shape = RoundedCornerShape(6.dp)
+    ) {
+        Text(
+            "#$code",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        )
+    }
+}
+
+@Composable
+private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {    Column(Modifier.fillMaxWidth()) {
         Text(
             title,
             style = MaterialTheme.typography.titleMedium,

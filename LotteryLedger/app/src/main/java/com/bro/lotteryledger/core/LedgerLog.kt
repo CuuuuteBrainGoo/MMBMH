@@ -86,7 +86,19 @@ object LedgerLog {
             buffer.addLast(entry)
             while (buffer.size > CAPACITY) buffer.removeFirst()
         }
-        sink?.invoke(entry.format() + "\n")
+        // ⚠️ sink 调用**必须**包异常。
+        //
+        // 它不是普通调用点：[com.bro.lotteryledger.LedgerApp] 在**未捕获异常处理器**里
+        // 也会调 `e(...)` 记崩溃。那条路径上如果 sink 抛异常（线程池拒绝任务、
+        // 磁盘满、文件系统只读……），就会在崩溃处理器里再抛一个 ——
+        // 崩溃处理器抛异常 = 进程被直接杀掉，**原始崩溃堆栈彻底丢失**，
+        // 用户看到的还是"闪退"，但一点线索都没有。
+        // 内存缓冲已经在上面写好了，所以这里吞掉异常不损失任何东西。
+        try {
+            sink?.invoke(entry.format() + "\n")
+        } catch (_: Throwable) {
+            // 吞掉：日志写不出去，绝不能反过来把主流程（或崩溃处理器）搞崩
+        }
     }
 
     /** 快照，最新在前（给人看，倒序更顺手）。 */

@@ -11,6 +11,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -44,12 +45,118 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // ⚠️ 崩溃屏**必须在 setContent 之前、且用原生 View** 弹。
+        //
+        // 起因（2026-09-27）：v1.5.0 点图标闪退，而拿不到任何日志。
+        // 如果崩溃原因跟 Compose 主题/组合有关（1.5.0 恰好大改了主题系统），
+        // 那么把崩溃屏写在 Compose 里就会**跟着一起崩**，等于没做。
+        // 原生 AlertDialog 不碰 MaterialTheme、不碰我们的 LedgerColors，
+        // 是这条链路上最不容易被同一原因带崩的选择。
+        showLastCrashIfAny()
+
         setContent {
             // 主题要等 ViewModel 把用户选的 [ThemeMode] 读出来再定，
             // 所以这里先渲染，主题本身在 [LedgerRoot] 里包（它才拿得到 vm）。
             LedgerRoot()
         }
     }
+
+    /**
+     * 上次启动崩过的话，把堆栈摆到用户面前。
+     *
+     * 三个动作：**复制 / 分享 / 知道了**。少爷要的是「发给我」，
+     * 所以「复制」和「分享」都得给 —— 分享可以甩进微信，复制可以贴进对话。
+     *
+     * ## 2026-09-27 第 2 轮修正：必须说清「这是哪次崩的」
+     *
+     * 少爷升级到修复版后反馈「**每次打开都弹这个**」——
+     * 实际是升级前那次崩溃留下的记录文件还在（他看没点按钮就退出了，
+     * 而按钮才会清文件），更关键的是**弹窗里完全没写这条记录来自哪个版本**，
+     * 所以他没法判断「这是刚崩的还是老账」。
+     *
+     * 现在顶部按版本号分两种说法：
+     *  - **记录版本 == 当前版本** → 「刚崩了」，语气按真问题来
+     *  - **记录版本 != 当前版本** → 「这是 xx 的旧记录，当前版本已修复」，
+     *    并说明可以直接关掉。既不丢线索，也不制造恐慌。
+     */
+    private fun showLastCrashIfAny() {
+        val crash = (application as? com.bro.lotteryledger.LedgerApp)?.lastCrash ?: return
+        val recordVer = com.bro.lotteryledger.core.CrashBeacon.versionOf(crash)
+        val nowVer = com.bro.lotteryledger.BuildConfig.VERSION_NAME
+        val isOld = recordVer != null && recordVer != nowVer
+
+        // 消息很长，必须可滚动，否则末尾的关键堆栈看不到。
+        // 所以不用 setMessage（它在长文本时会被截断且不能滚），自己塞一个 ScrollView。
+        val content = android.widget.ScrollView(this).apply {
+            setPadding(dp(18), dp(8), dp(18), dp(8))
+            addView(
+                android.widget.TextView(this@MainActivity).apply {
+                    text = crash
+                    typeface = android.graphics.Typeface.MONOSPACE
+                    textSize = 10f
+                    setTextIsSelectable(true)
+                }
+            )
+        }
+
+        val tip = android.widget.TextView(this).apply {
+            text = if (isOld) {
+                "⚠️ 这是【旧版本 $recordVer】留下的记录，当前版本 $nowVer 已经修好了这个问题。\n" +
+                    "点「知道了」关掉即可，之后不会再弹。\n" +
+                    "（留着是为了万一还需要它。想发给开发者就点「分享」或「复制」。）"
+            } else {
+                "上面这段就是崩溃原因。请「分享」或「复制」后发给开发者，" +
+                    "能直接定位到代码哪一行。关掉这个框后 App 可以正常用。"
+            }
+            setPadding(dp(18), dp(14), dp(18), 0)
+        }
+
+        val dlg = android.app.AlertDialog.Builder(this)
+            .setTitle(if (isOld) "旧版本的崩溃记录" else "上次打开时出了点问题")
+            .setView(android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                addView(tip)
+                addView(
+                    content,
+                    android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.MATCH_PARENT, dp(320)
+                    )
+                )
+            })
+            .setPositiveButton("复制") { _, _ ->
+                val cm = getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                    as android.content.ClipboardManager
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("崩溃日志", crash))
+                android.widget.Toast.makeText(this, "已复制，去粘贴给开发者", android.widget.Toast.LENGTH_LONG).show()
+                com.bro.lotteryledger.core.CrashBeacon.clear(this)
+            }
+            .setNeutralButton("分享") { _, _ ->
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(android.content.Intent.EXTRA_SUBJECT, "彩票账本崩溃记录")
+                    putExtra(android.content.Intent.EXTRA_TEXT, crash)
+                }
+                try {
+                    startActivity(android.content.Intent.createChooser(intent, "发送崩溃记录"))
+                } catch (_: Exception) {
+                }
+                com.bro.lotteryledger.core.CrashBeacon.clear(this)
+            }
+            .setNegativeButton(if (isOld) "知道了，不再提示" else "知道了") { _, _ ->
+                com.bro.lotteryledger.core.CrashBeacon.clear(this)
+            }
+            .setCancelable(false)
+            .create()
+
+        try {
+            dlg.show()
+        } catch (_: Exception) {
+            // 弹不出来也不能影响 App 启动 —— 至少日志里已经有记录了
+        }
+    }
+
+    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 }
 
 sealed interface Route {
@@ -129,6 +236,25 @@ private fun LedgerRootContent(vm: MainViewModel) {
     // 比"切个深色就丢当前页"划算得多。
     var route by rememberSaveable(stateSaver = RouteSaver) {
         mutableStateOf<Route>(Route.Home)
+    }
+
+    // ⛔ 首页列表的滚动位置必须**在这里**持有，不能放进 HomeScreen 内部。
+    //
+    // 起因（2026-09-27 少爷报）：从首页下滑 → 点一张票进详情 → 返回，
+    // 位置被弹回顶部，得重新滑一遍。
+    //
+    // 根因：详情页**不是 Route**，而是 `detail != null` 这个独立状态，
+    // 在下面那个 `when` 里优先级高于 route。所以进详情时 HomeScreen
+    // 会被**整个移出组合树** —— 它内部的 `rememberLazyListState()` 跟着销毁，
+    // 返回时重新创建，位置自然归零。
+    //
+    // 修法：state 提到这一层（组合树里**始终存在**的地方），HomeScreen 只负责渲染。
+    //
+    // 用 rememberSaveable + LazyListState.Saver：既扛住「进详情返回」，
+    // 也扛住「Activity 重建」（系统切深浅色 / 旋转屏）——
+    // 跟 [route] 用 rememberSaveable 是同一个理由。
+    val homeListState = rememberSaveable(saver = LazyListState.Saver) {
+        LazyListState()
     }
     val home by vm.home.collectAsStateWithLifecycle()
     val scan by vm.scan.collectAsStateWithLifecycle()
@@ -251,6 +377,9 @@ private fun LedgerRootContent(vm: MainViewModel) {
                     onConfirmDistinct = { vm.confirmDistinct() },
                     onCommit = { vm.commitPending { vm.refreshAll() } },
                     onDiscard = { vm.discardPending() },
+                    // 判重提示里的「#47」是数据库 id，用户看不懂 ——
+                    // 换成首页列表上的展示编号，用户能直接对上号。
+                    formatReason = { r, id -> vm.duplicateReasonText(r, id) },
                     onBack = { vm.askDiscard() }
                 )
             }
@@ -350,6 +479,7 @@ private fun LedgerRootContent(vm: MainViewModel) {
                     state = home,
                     checking = checking,
                     redeeming = redeeming,
+                    listState = homeListState,
                     onScan = {
                         // 拍照页里还有「手工填写」，那条路不需要 AI。
                         // 所以没配平台也**必须放行** —— 之前一律跳设置页，

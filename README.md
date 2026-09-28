@@ -17,8 +17,8 @@
 
 | 文件 | 用途 |
 |---|---|
-| **`LotteryLedger-v1.5.0-release-signed.apk`**（13 MB） | **装这个** —— 体积小，无调试信息 |
-| `LotteryLedger-v1.5.0-debug-signed.apk`（20 MB） | 调试用，带完整日志 |
+| **`LotteryLedger-v1.6.0-release-signed.apk`**（13 MB） | **装这个** —— 体积小，无调试信息 |
+| `LotteryLedger-v1.6.0-debug-signed.apk`（20 MB） | 调试用，带完整日志 |
 
 > 手机上点开 APK 就能装，需要先允许「安装未知来源应用」。
 > 签名是 Android 默认调试证书，**适合自用，不适合上架应用商店。**
@@ -66,6 +66,7 @@
 | **批量导入** | 一次选多张，逐张处理带进度，中断可恢复，结果自动分成「正常 / 重复 / 待确认」 |
 | **本地对奖** | 官方接口只拿开奖号码，**对奖逻辑全在本地跑**，账目不上传 |
 | **去重** | 每张实体票算一个指纹，同一张票重复录入会被拦住（防止重复记账） |
+| **展示编号** | 每张票一个 `#12` 编号，越新数字越大，方便在提示和列表之间对号 |
 | **过期提醒** | 兑奖期限 = 开奖日 + 60 天；国庆头 3 天、春节头 7 天内到期的自动顺延 |
 | **统计报表** | 按彩种 / 按期号聚合，另有公益贡献合计 |
 | **数据备份** | 导出 JSON 备份 / 从备份恢复，换手机不丢账 |
@@ -97,7 +98,8 @@
 
 - **Kotlin + Jetpack Compose**（全 Compose，无 XML 布局）
 - **Room** 本地数据库，`app_settings` 是 key-value 表存设置
-- **手写路由**（`sealed interface Route` + `when`），没引 Navigation 库
+- **手写路由**（`sealed interface Route` + `when`），**不用** Navigation 库
+  （依赖里虽列了 `navigation-compose`，但代码中一处未用，属历史遗留）
 - **minSdk 26** —— 所以 `java.time` 可以直接用，不需要 desugaring
 - **主题架构**：语义色走 `CompositionLocal` 下发，`LedgerColors.X` 是
   `@Composable @ReadOnlyComposable get()` 转发，所以加皮肤时**调用点一行都不用改**
@@ -114,7 +116,7 @@ LotteryLedger/
     net/                      ← 开奖接口（只拿号码）
     repo/                     ← 设置存储、备份编解码、Key 加密存储
     ui/                       ← Compose 界面
-  app/src/test/               ← 单元测试（约 440 个）
+  app/src/test/               ← 单元测试（约 460 个）
 UI Design/                    ← 网页原型，不参与编译
 apk/                          ← 交付的安装包
 ```
@@ -123,7 +125,7 @@ apk/                          ← 交付的安装包
 
 ## 编译
 
-需要 JDK 17 + Android SDK（compileSdk 35）。
+需要 JDK 17 + Android SDK（compileSdk 34）。
 
 ```bash
 ./gradlew assembleRelease
@@ -143,8 +145,8 @@ apk/                          ← 交付的安装包
 唯一来源是 `LotteryLedger/version.properties`：
 
 ```properties
-versionCode=9
-versionName=1.5.0
+versionCode=13
+versionName=1.6.0
 ```
 
 - `versionCode` 每次发安装包 **必须 +1**（Android 靠它判断是不是新版本）

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -53,6 +54,14 @@ fun HomeScreen(
     checking: Boolean,
     /** 一键兑奖进行中 */
     redeeming: Boolean,
+    /**
+     * 列表滚动位置 —— **由外层持有**（少爷 2026-09-27 要求保留位置）。
+     *
+     * 不能在这里 `rememberLazyListState()`：进详情页时整个 HomeScreen
+     * 会被移出组合树，内部 state 跟着销毁，返回就弹回顶部了。
+     * 详见 [MainActivity] 里 `homeListState` 的注释。
+     */
+    listState: LazyListState,
     onScan: () -> Unit,
     onSettings: () -> Unit,
     onLogs: () -> Unit,
@@ -138,7 +147,8 @@ fun HomeScreen(
         }
     ) { padding ->
         LazyColumn(
-            Modifier.padding(padding).fillMaxSize(),
+            state = listState,
+            modifier = Modifier.padding(padding).fillMaxSize(),
             contentPadding = PaddingValues(14.dp, 10.dp, 14.dp, 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -150,6 +160,8 @@ fun HomeScreen(
                     toRedeem = s?.toRedeem ?: 0.0,
                     expired = s?.expired ?: 0.0,
                     pendingPrizeCount = s?.pendingPrizeCount ?: 0,
+                    // 待确认金额的票编号清单（少爷 2026-09-27 要求）
+                    pendingConfirmCodes = state.toConfirmCodes,
                     loading = state.loading,
                     // 筛选生效时主账卡多显示一行筛选后金额（少爷 2026-09-27 要求）
                     filterSummary = state.filter.summary(),
@@ -217,7 +229,10 @@ fun HomeScreen(
                 item {
                     InfoBanner(
                         text = "有 ${state.toRedeemCount} 张票已中奖待兑，" +
-                            "合计 ${yuan(state.toRedeemAmount)}",
+                            "合计 ${yuan(state.toRedeemAmount)}" +
+                            // 附上编号清单，用户能去列表里逐个对上（少爷 2026-09-27 要求）
+                            if (state.pendingRedeemCodes.isNotEmpty())
+                                "\n编号：${state.pendingRedeemCodes}" else "",
                         action = {
                             if (redeeming) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -251,7 +266,9 @@ fun HomeScreen(
                 item {
                     InfoBanner(
                         text = "有 ${state.unavailableCount} 张票查不到开奖结果，" +
-                            "需要你手动记一笔（点开下面的票）",
+                            "需要你手动记一笔（点开下面的票）" +
+                            if (state.unavailableCodes.isNotEmpty())
+                                "\n编号：${state.unavailableCodes}" else "",
                         action = {
                             TextButton(
                                 onClick = {
@@ -348,7 +365,12 @@ fun HomeScreen(
 
             items(state.visible, key = { it.id }) { t ->
                 // 同一期买了多张时把序号传下去（同组只有一张时为 null，不显示）
-                TicketCard(t, state.issueSeq[t.id]) { onTicketClick(t) }
+                TicketCard(
+                    t = t,
+                    seq = state.issueSeq[t.id],
+                    code = state.ticketCodes[t.id],
+                    onClick = { onTicketClick(t) }
+                )
             }
         }
     }
@@ -464,6 +486,38 @@ private fun IssueSeqBadge(index: Int, total: Int) {
 }
 
 /**
+ * 彩票展示编号徽章，形如 `#12`（少爷 2026-09-27 要求）。
+ *
+ * > 「在首页每个彩票前面加一个编号，越新的编号数字越大，
+ * >  作为每张彩票展示给用户的编码。」
+ *
+ * ## 为什么用中性色而不是金色
+ *
+ * 金色已经被 [IssueSeqBadge]（同一期第几张）和「奖金待确认」占了，
+ * 红色是「中奖」、紫色是「已过期」——**编号是纯标识，不带任何含义**，
+ * 抢了语义色会让用户以为它代表某种状态。
+ *
+ * 所以用 `onSurfaceVariant` 配一层浅底：够醒目（能一眼扫到、能报给开发者），
+ * 又明确是「中性信息」。等宽字体让数字对齐，一眼能比大小。
+ */
+@Composable
+private fun TicketCodeBadge(code: Int) {
+    Surface(
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.14f),
+        shape = RoundedCornerShape(6.dp)
+    ) {
+        Text(
+            "#$code",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        )
+    }
+}
+
+/**
  * 主账卡 —— **变体 4**（少爷 2026-09-27 从 4 个变体里挑的）。
  *
  * ## 为什么不是实心色块
@@ -504,6 +558,8 @@ private fun HeroCard(
     toRedeem: Double,
     expired: Double,
     pendingPrizeCount: Int,
+    /** 待确认金额的票编号清单（少爷 2026-09-27 要求），形如 `#12、#9` */
+    pendingConfirmCodes: String = "",
     loading: Boolean,
     filterSummary: String = "",
     filtered: TicketStats? = null
@@ -554,7 +610,9 @@ private fun HeroCard(
                     Spacer(Modifier.height(6.dp))
                     Text(
                         "有 $pendingPrizeCount 笔中奖金额还没填，" +
-                            "一、二等奖不自动抓取金额，填好后才计入",
+                            "一、二等奖不自动抓取金额，填好后才计入" +
+                            if (pendingConfirmCodes.isNotEmpty())
+                                "\n编号：$pendingConfirmCodes" else "",
                         style = MaterialTheme.typography.bodySmall,
                         color = subText
                     )
@@ -1115,7 +1173,13 @@ private fun NoMatchHint(summary: String, onClear: () -> Unit) {
  *            同组只有一张时为 null，不显示 —— 标「1/1」纯属噪音
  */
 @Composable
-private fun TicketCard(t: TicketEntity, seq: Pair<Int, Int>?, onClick: () -> Unit) {
+private fun TicketCard(
+    t: TicketEntity,
+    seq: Pair<Int, Int>?,
+    /** 展示编号（少爷 2026-09-27 要求）。为 null 时不显示徽章 */
+    code: Int?,
+    onClick: () -> Unit
+) {
     val type = LotteryType.from(t.lotteryType)
     val status = TicketStatus.from(t.ticketStatus)
     val accent = when (type) {
@@ -1148,6 +1212,12 @@ private fun TicketCard(t: TicketEntity, seq: Pair<Int, Int>?, onClick: () -> Uni
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.weight(1f, fill = false)
                     ) {
+                        // 展示编号放在最前面 —— 少爷原话是「在每个彩票**前面**加一个编号」。
+                        // 放最左最容易扫、也最符合「这是这张票的门牌号」的直觉。
+                        code?.let {
+                            TicketCodeBadge(it)
+                            Spacer(Modifier.width(7.dp))
+                        }
                         Text(
                             "${type?.display ?: t.lotteryType} · ${t.issue} 期",
                             style = MaterialTheme.typography.titleMedium

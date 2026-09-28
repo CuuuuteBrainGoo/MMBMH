@@ -73,7 +73,31 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
          *
          * 同组只有一张的**不在**这个 map 里 —— 界面上只有需要区分时才标序号。
          */
-        val issueSeq: Map<Long, Pair<Int, Int>> = emptyMap()
+        val issueSeq: Map<Long, Pair<Int, Int>> = emptyMap(),
+        /**
+         * 彩票**展示编号**：`票 id → 编号`（少爷 2026-09-27 要求）。
+         *
+         * 编号**越大越新**，列表最下面那张是 1、最上面那张等于总张数。
+         *
+         * ⚠️ 它一定按 [tickets]（**全量**）算，**不是** [visible]。
+         * 少爷明确要求「这个编号在筛选时不变」—— 筛一次编号全变，
+         * 用户刚记下的「第 12 张」就对不上了。
+         */
+        val ticketCodes: Map<Long, Int> = emptyMap(),
+
+        /**
+         * 几条提示里要带的编号清单（少爷 2026-09-27 要求：
+         * 「如果其他功能有提示涉及具体某个彩票，可以附带编码，让用户更好定位」）。
+         *
+         * 存的是**已经算好的编号串**（形如 `#12、#9、#4`），不是 id 列表 ——
+         * 让 UI 直接显示，不用再关心怎么从 id 换算编号。
+         *
+         * 每条都用 [TicketCode.join] 生成：编号从大到小排（跟列表顺序一致），
+         * 超过 6 个就省略 —— 提示条塞不下几十个编号。
+         */
+        val pendingRedeemCodes: String = "",
+        val unavailableCodes: String = "",
+        val toConfirmCodes: String = ""
     )
 
     private val _home = MutableStateFlow(HomeState())
@@ -255,6 +279,55 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ---------------- 主题模式 + 皮肤 ----------------
+    //
+    // ⚠️⚠️ 这两个字段**必须声明在下面 init 块之前**。Kotlin 按**声明顺序**跑初始化器：
+    // 声明在 init 之后 → init 里调 loadThemeMode()/loadSkin() 时它们**还是 null**。
+    //
+    // 而 viewModelScope 用的是 Dispatchers.Main.immediate —— 在主线程调用 launch
+    // 会**立即执行**协程体，于是 `_themeMode.value` 在 null 上取 value → NPE。
+    //
+    // 2026-09-27 v1.5.0 真机闪退就是这个（少爷录屏截图拿到的堆栈：
+    // MainViewModel$loadThemeMode$1.invokeSuspend(MainViewModel.kt:317) NPE）。
+    // 平时不崩是因为协程通常排队执行、等到那时 init 早跑完了 —— 典型的竞态，
+    // 所以表现是"有时候崩有时候不崩"，极难靠读代码发现。
+    //
+    // 【教训】init 块里用到的所有字段，声明一律放它上面。改这个文件时别把它们挪下去。
+
+    /**
+     * 用户选的浅色/深色/跟随系统。
+     *
+     * 默认 [ThemeMode.SYSTEM] —— 加这个设置之前 App 就是跟随系统，
+     * 老用户升级上来不该被突然换成别的主题。
+     *
+     * ⚠️ 这里**只管「用户选了什么」**，真正「现在该用浅色还是深色」
+     * 由 `LedgerRoot` 结合 `isSystemInDarkTheme()` 算 —— 因为 [ThemeMode.SYSTEM]
+     * 需要系统值才能定，而系统值只在 Compose 环境里读得到。
+     */
+    private val _themeMode = MutableStateFlow(ThemeMode.SYSTEM)
+    val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
+
+    /**
+     * 用户选的皮肤：墨金账本 / 支付宝 / 微信（少爷 2026-09-27）。
+     *
+     * 默认 [LedgerSkin.MOJIN]。**皮肤和深浅色是两个独立维度**，
+     * 所以这里只存「哪套配色」，深浅色仍归 [themeMode] 管。
+     */
+    private val _skin = MutableStateFlow(LedgerSkin.MOJIN)
+    val skin: StateFlow<LedgerSkin> = _skin.asStateFlow()
+
+    /**
+     * ⛔ 往这个 init 块里加东西之前，先读这条：
+     *
+     * Kotlin **按声明顺序**跑初始化器。init 里调用的任何函数，只要它访问了
+     * **声明在 init 之后**的字段，那个字段在协程立即执行时**就是 null** ——
+     * 而 `viewModelScope` 用 `Dispatchers.Main.immediate`，在主线程 launch 会
+     * **同步跑**协程体。于是 `_someFlow.value = x` 变成在 null 上调 —— NPE。
+     *
+     * 2026-09-27 真机闪退就是这么来的（`_themeMode` 声明晚于 init）。
+     *
+     * **所以：init 用到的字段，一律声明在它上面。** 加新字段时别图省事塞在下面。
+     */
     init {
         refreshAll()
         // 启动就加载平台配置。
@@ -291,18 +364,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------------- 主题模式（少爷 2026-09-27 第 6 条）----------------
 
-    /**
-     * 用户选的浅色/深色/跟随系统。
-     *
-     * 默认 [ThemeMode.SYSTEM] —— 加这个设置之前 App 就是跟随系统，
-     * 老用户升级上来不该被突然换成别的主题。
-     *
-     * ⚠️ 这里**只管「用户选了什么」**，真正「现在该用浅色还是深色」
-     * 由 `LedgerRoot` 结合 `isSystemInDarkTheme()` 算 —— 因为 [ThemeMode.SYSTEM]
-     * 需要系统值才能定，而系统值只在 Compose 环境里读得到。
-     */
-    private val _themeMode = MutableStateFlow(ThemeMode.SYSTEM)
-    val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
+    // ---------------- 主题模式（少爷 2026-09-27 第 6 条）----------------
+    // 字段声明已上移到 init 块之前（顺序要求见那里的注释）。
 
     fun setThemeMode(mode: ThemeMode) {
         _themeMode.value = mode
@@ -323,14 +386,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /**
-     * 用户选的皮肤：墨金账本 / 支付宝 / 微信（少爷 2026-09-27）。
-     *
-     * 默认 [LedgerSkin.MOJIN]。**皮肤和深浅色是两个独立维度**，
-     * 所以这里只存「哪套配色」，深浅色仍归 [themeMode] 管。
-     */
-    private val _skin = MutableStateFlow(LedgerSkin.MOJIN)
-    val skin: StateFlow<LedgerSkin> = _skin.asStateFlow()
+    // ---------------- 皮肤（少爷 2026-09-27）----------------
+    // 字段声明已上移到 init 块之前（顺序要求见那里的注释）。
 
     fun setSkin(s: LedgerSkin) {
         _skin.value = s
@@ -374,6 +431,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 idOf = { it.id }
             )
             val visible = tickets.filter { f.matches(it) }
+            // 展示编号（少爷 2026-09-27 要求）。
+            // ⚠️ 必须用 `tickets`（全量）而不是 `visible` —— 少爷要求「编号在筛选时不变」。
+            // 列表已按开奖日期倒序，所以这里算出来天然是「越大越新」。
+            val ticketCodes = TicketCode.assign(tickets) { it.id }
+            // 几条提示要带的编号清单（少爷 2026-09-27 要求）。
+            // 先查票、再按 id 映射成编号 —— 编号表已经算好了，这里只是取值。
+            val unavailableTickets =
+                repo.ticketsByStatus(TicketStatus.RESULT_UNAVAILABLE.name)
+            val toConfirmTickets =
+                repo.ticketsByStatus(TicketStatus.PRIZE_PENDING.name)
+            fun codesOf(list: List<TicketEntity>) =
+                TicketCode.join(list.map { ticketCodes[it.id] })
             _home.value = HomeState(
                 loading = false, stats = stats, tickets = tickets,
                 visible = visible,
@@ -385,7 +454,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 toRedeemCount = pendingRedeem.size,
                 toRedeemAmount = pendingRedeem.sumOf { it.prizeAmount ?: 0.0 },
                 totalCalls = calls, totalTokens = tokens,
-                issueSeq = issueSeq
+                issueSeq = issueSeq,
+                ticketCodes = ticketCodes,
+                pendingRedeemCodes = codesOf(pendingRedeem),
+                unavailableCodes = codesOf(unavailableTickets),
+                toConfirmCodes = codesOf(toConfirmTickets)
             )
         }
     }
@@ -1197,7 +1270,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val bets: List<TicketBetEntity>,
         val deadline: RedemptionDeadline.Info?,
         /** 这一期的开奖号码（库里查到的；没有就说明还没查到） */
-        val draw: DrawNumbers? = null
+        val draw: DrawNumbers? = null,
+        /**
+         * 这张票的展示编号（少爷 2026-09-27 要求）。
+         *
+         * 打开详情时从 [_home] 的编号表里取一次**快照** —— 不实时的原因：
+         * 详情页开着的时候列表一般不会变；就算变了（比如核验改了状态），
+         * 编号也不该在用户眼皮底下跳，那才是真的让人迷惑。
+         */
+        val code: Int? = null
     )
 
     private val _detail = MutableStateFlow<TicketDetail?>(null)
@@ -1214,9 +1295,67 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 ticket = t,
                 bets = repo.betsOf(id),
                 deadline = RedemptionDeadline.compute(t.drawDate),
-                draw = loadStoredDraw(t)
+                draw = loadStoredDraw(t),
+                // 编号取自当前首页状态。拿不到就 null（界面上不显示编号，不报错）。
+                code = TicketCode.codeOf(_home.value.ticketCodes, id)
             )
         }
+    }
+
+    /**
+     * 统一取编号 —— 各处提示文案都用它，别各自去翻 `home.ticketCodes`。
+     *
+     * 取不到返回 null（比如票刚被删），[TicketCode.label] 会自然渲染成「不显示编号」。
+     */
+    fun codeOf(id: Long): Int? = TicketCode.codeOf(_home.value.ticketCodes, id)
+
+    /**
+     * 给「针对某一张票」的提示挂上编号（少爷 2026-09-27 要求）。
+     *
+     * > 「如果其他功能有提示涉及具体某个彩票，可以附带编码，让用户更好定位。」
+     *
+     * 形如 `#12 · 这张票没中奖`。
+     *
+     * ## 为什么在这里拼而不是改 `PrizeNotice`
+     *
+     * `PrizeNotice` 在 core 里是**纯函数、可单测**的，它压根不知道「列表编号」这回事
+     * （编号依赖列表顺序，是 UI 层才有的上下文）。把编号塞进去会让它没法单测，
+     * 也会让「文案」和「展示位置」混在一起。
+     *
+     * 所以：**core 负责说什么，这里负责挂在谁的头上。**
+     *
+     * 拿不到编号就原样返回 —— 提示不能因为编号缺失就不显示了。
+     */
+    private fun withCode(ticketId: Long, n: Notice): Notice {
+        val c = codeOf(ticketId) ?: return n
+        return n.copy(text = "#$c · ${n.text}")
+    }
+
+    /**
+     * 把判重文案里的「数据库 id」换成「展示编号」（少爷 2026-09-27 要求）。
+     *
+     * ## 为什么需要它
+     *
+     * `Fingerprints` 判出重复时，reason 里写的是
+     * 「票面唯一编号与已有彩票 **#47** 完全一致」—— 那个 `47` 是**数据库主键**
+     * （`TicketEntity.id`），用户在任何界面上都看不到它，等于给了个没用的指路牌。
+     *
+     * 换成展示编号（`#12` 这种），用户就能直接在首页列表里对上号。
+     *
+     * ## 为什么用替换而不是改 Fingerprints 的入参
+     *
+     * `Fingerprints` 是 core 里的**纯函数、有完整单测**，它不知道「列表编号」这回事
+     * （编号依赖排序，是 UI 才有的上下文）。硬塞进去会让它没法单测。
+     *
+     * 所以在这里做一次**定向替换**：只把 `#<matchedId>` 这个具体串换掉，
+     * 别的一概不动 —— 不会误伤文案里其它数字。
+     *
+     * 拿不到编号就原样返回（票可能刚被删）。
+     */
+    fun duplicateReasonText(reason: String, matchedTicketId: Long?): String {
+        val mid = matchedTicketId ?: return reason
+        val c = codeOf(mid) ?: return reason
+        return reason.replace("#$mid", "#$c")
     }
 
     /** 把库里存的开奖结果还原成 [DrawNumbers]（主区在前、次区在后）。 */
@@ -1450,7 +1589,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 prizeService.confirmAmount(ticketId, amountYuan)
-                _toast.value = PrizeNotice.amountConfirmed(amountYuan)
+                _toast.value = withCode(ticketId, PrizeNotice.amountConfirmed(amountYuan))
             } catch (e: Exception) {
                 LedgerLog.e("Prize", "确认金额失败", e)
                 _toast.value = Notice("确认失败：${e.message}", NoticeKind.ERROR)
@@ -1470,7 +1609,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 prizeService.markRedeemed(ticketId, amountYuan)
-                _toast.value = PrizeNotice.markedRedeemed()
+                _toast.value = withCode(ticketId, PrizeNotice.markedRedeemed())
             } catch (e: Exception) {
                 LedgerLog.e("Prize", "标记兑奖失败", e)
                 _toast.value = Notice("标记失败：${e.message}", NoticeKind.ERROR)
@@ -1490,7 +1629,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 prizeService.markNotWon(ticketId)
-                _toast.value = PrizeNotice.markedNotWon()
+                _toast.value = withCode(ticketId, PrizeNotice.markedNotWon())
             } catch (e: Exception) {
                 LedgerLog.e("Prize", "手动标记未中奖失败", e)
                 _toast.value = Notice("标记失败：${e.message}", NoticeKind.ERROR)
@@ -1509,7 +1648,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 prizeService.markWonManually(ticketId, amountYuan)
-                _toast.value = PrizeNotice.markedWonManually(amountYuan)
+                _toast.value = withCode(ticketId, PrizeNotice.markedWonManually(amountYuan))
             } catch (e: Exception) {
                 LedgerLog.e("Prize", "手动记中奖失败", e)
                 _toast.value = Notice("标记失败：${e.message}", NoticeKind.ERROR)
@@ -1549,7 +1688,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             LedgerLog.e("Prize", "核验异常", e)
             com.bro.lotteryledger.repo.PrizeService.Outcome.Failed(e.message ?: "未知错误")
         }
-        _toast.value = PrizeNotice.describe(outcome)
+        _toast.value = withCode(ticketId, PrizeNotice.describe(outcome))
         refreshAll()
         // 详情页正开着的话把它刷新，让用户立刻看到结果
         refreshDetailIfOpen(ticketId)
