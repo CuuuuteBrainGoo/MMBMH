@@ -13,14 +13,50 @@ python F:\LottBuild\_secret_sentinel.py     # 必须看到 RESULT: CLEAN
   统一根因：**靠"记得要查什么"防守，而不是靠机制。列清单必漏清单。**
 - `.workbuddy/memory/*.md` **在仓库里** → 写复盘文档不许抄真实凭据
 - **绝不点 GitHub 的 unblock 按钮**；改本地历史（全链路）才是唯一正解
-- 远端 `https://github.com/CuuuuteBrainGoo/MMBMH.git`
-- ⚠️ **沙箱里推不上去 GitHub** —— 网络隔离：直连 443 超时，也**看不到宿主机的 mihomo**
-  （沙箱的 `127.0.0.1` 不是宿主机的，10090 在这边无监听）。
-  **别反复重试、别去扫端口，纯浪费轮次。**
-  **推送这最后一步由少爷在本机双击 `推送到GitHub.bat`** ——
-  那个脚本会自动探测本机代理端口并写进 git 配置。
-  AI 的职责到「**提交到本地 git** + 告诉少爷可以推了」为止。
+- `https://github.com/CuuuuteBrainGoo/MMBMH.git`（远端 `main`）
+- ⚠️ **沙箱能不能推上去 GitHub？能 —— 条件是少爷先跑过一次 bat。**
+  - 沙箱网络隔离：**看不到宿主机的 mihomo**（`127.0.0.1` 不是同一个）。
+    **首次、且没跑过 bat 时**，直连 443 超时 —— 这时别重试、别扫端口，纯浪费轮次。
+  - **但只要少爷在本机双击过一次 `推送到GitHub.bat`**，那个脚本会把探测到的
+    代理端口写进**本仓库的 git config**（`http.proxy` / `https.proxy`）→
+    **之后沙箱里的 git 走同一个 config，就能直连成功**（2026-09-28 实测推成功）。
+  - **AI 的正确流程**：先试 `git push`（输出重定向到文件，别接管道）。
+    成功就完事；**失败再让少爷双击 bat**。
 - 详见技能 `pre-push-secret-scrub`
+
+## ⛔ 重写历史后：必须 force push，且 tag 会悬空 ★★
+
+`filter-branch` / `rebase` 一旦重写历史，远端会出现「本地没有的提交」→ 普通 push 被拒：
+
+```
+! [rejected]  main -> main (fetch first)
+```
+
+**别慌，这不是故障，是历史分叉的必然结果。** 正确处置：
+
+1. **先 `git ls-remote origin refs/heads/main` 拿远端真实值** ——
+   本地 `origin/main` 可能是**陈旧缓存**，据此判断"能不能 fast-forward"会误判（踩过）。
+2. `git fetch origin`（**输出重定向到文件，绝不接管道** —— 管道断裂会 SIGTERM 杀掉 git）
+3. `git push --force-with-lease -u origin main`
+   （**用 `--force-with-lease` 不用 `--force`**：远端被别人动过会自动中止，不静默覆盖）
+4. **tag 会全部悬空**（指向被剔除的旧提交，点进去 404）→ 逐个重指：
+   `git tag -f v1.5.0 <新历史里的对应提交>`，再 `git push --force origin v1.5.0 v1.6.0 ...`
+5. **补建当前版本 tag**（历史重写容易漏掉最新版没打 tag）
+
+### 剔历史文件的正确粒度 ★
+
+- ❌ `git rm -r --cached apk` —— **剔的是「apk/ 下的一切」**，
+  连要保留的 `apk/真机验收清单.md` 一起剔掉，**且工作区文件同步消失**
+  （index-filter 跑在工作区取文件之前）。**2026-09-28 就是这么翻车的。**
+- ✅ 要剔什么就**精确写什么路径**，一次一个文件；剔完立刻 `git checkout` 回工作区确认
+- ✅ 动手前**必须先做整仓备份**（`.git` 全拷一份到仓库外），这次全靠备份救回来的
+
+### force push 后服务端不会立刻瘦身 ★
+
+- **客户端 `.git` 干净 ≠ 服务端干净**。force push 后旧提交变"孤儿"，
+  但服务端对象库里的旧 blob 要等 **GitHub 定期 gc**（几小时~几天，不由我们控制）。
+- 症状：远端仓库 `size` API 仍报 64 MB、旧 commit 仍可访问 → **这是正常的，不是瘦身失败**。
+- **别为了立即瘦身去删库重建**，代价远超收益。
 
 ## 版本号散落 4 处，升版必须同步改 ★
 
@@ -35,6 +71,32 @@ python F:\LottBuild\_secret_sentinel.py     # 必须看到 RESULT: CLEAN
 | `apk/真机验收清单.md` | 标题 + 安装路径 |
 
 **校验**：`python F:\LottBuild\_release_guard.py`（不一致会 FAIL 并指出该改哪里）
+**已焊进 `_pack.py`** → 打包前自动跑，不一致直接中断（不用再记着手动跑）。
+
+## ⛔ 「代码 push 了」≠「Release 存在」★★（2026-09-28 少爷踩过）
+
+**README 顶部的版本徽章读的是 GitHub 的 Release，不是仓库里的 README 文件。**
+
+```markdown
+![Release](https://img.shields.io/github/v/release/CuuuuteBrainGoo/MMBMH)
+```
+→ 走 `GET /repos/{o}/{r}/releases/latest`，**没有任何 Release 时永远显示最旧的那个**。
+
+**症状**：代码 push 成功、bat 报 `[SUCCESS]`，但 Releases 页面不更新、徽章还显示旧版本。
+
+**每次发版必须三步齐全**（缺一步就出现上述症状）：
+
+| 步骤 | 命令/操作 | 作用 |
+|---|---|---|
+| ① 提交 | `git commit` | 代码进本地历史 |
+| ② 推送 | `git push`（或 bat） | 代码进远端 |
+| ③ **建 Release** | REST API `POST /repos/{o}/{r}/releases` + 传 APK 附件 | **徽章 / Releases 页面读这个** |
+
+建 Release 的姿势（沙箱可直连时）：
+- token 从 git 凭据取，**不落盘**：`git credential fill` + `printf "protocol=https\nhost=github.com\n\n"`
+- 建完还要 `POST https://uploads.github.com/repos/{o}/{r}/releases/{id}/assets?name=X` 传 APK
+  （**大文件必须走 `uploads.github.com` 域**，走 `api.github.com` 会失败）
+- **随时用 `/releases/latest` 接口验证徽章会显示什么**，别靠肉眼看页面
 
 ## 工程结构：两个目录，不是符号链接 ★
 
