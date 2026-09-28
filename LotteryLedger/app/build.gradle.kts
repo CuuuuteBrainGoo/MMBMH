@@ -66,7 +66,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.navigation:navigation-compose:2.8.2")
+    // 注意：**不要**加 androidx.navigation。
+    // 路由是手写的（sealed interface Route + when，见 MainActivity），
+    // 全工程零 import。曾误加过 navigation-compose:2.8.2 一直没用，2026-09-28 清掉。
 
     // Room
     implementation("androidx.room:room-runtime:2.6.1")

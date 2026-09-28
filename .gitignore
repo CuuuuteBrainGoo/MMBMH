@@ -31,9 +31,10 @@ apk/*.apk
 apk/*.idsig
 
 # 放行当前版本的安装包（改版本号时同步改这里）
-# ⚠️ 当前放行版本：1.6.0 —— 升版后务必同步改下面两行，否则推上去的是旧包
-!apk/LotteryLedger-v1.6.0-debug-signed.apk
-!apk/LotteryLedger-v1.6.0-release-signed.apk
+# ⚠️ 当前放行版本：1.6.1 —— 升版后务必同步改下面两行，否则推上去的是旧包
+# （`python F:\LottBuild\_release_guard.py` 会校验这行，_pack.py 打包前自动跑）
+!apk/LotteryLedger-v1.6.1-debug-signed.apk
+!apk/LotteryLedger-v1.6.1-release-signed.apk
 
 # ===== 签名密钥：绝对不能进仓库 =====
 # 万一以后加了正式签名，把这些文件放到这里对应的位置。
