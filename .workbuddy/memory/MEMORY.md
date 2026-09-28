@@ -6,8 +6,16 @@
 ## ⛔ 推送 GitHub 前必须先跑密钥哨兵 ★★★
 
 ```bash
-python F:\LottBuild\_secret_sentinel.py     # 必须看到 RESULT: CLEAN
+python F:/LottBuild/_secret_sentinel.py "F:/Projects/MMBMH-mony mony back my home"
+# 必须看到两行：RESULT: CLEAN + scanned: N commits + M files
 ```
+
+- ⚠️ **必须显式传仓库路径**。脚本本体住在 `F:\LottBuild`，**那里不是 git 仓库**：
+  在脚本目录裸跑会扫错地方。以前它会「静默降级成只扫工作区 + 照样打印 CLEAN」，
+  **2026-09-28 已修成硬失败**（`RESULT: ABORT` + 退出码 2），
+  顺带把统计写进 CLEAN 行（`scanned: 14 commits + 143 files`）——
+  **「干净」必须自带证据，不能只吐一个结论**。
+- 退出码：`0`=干净可推 / `1`=发现疑似密钥别推 / **`2`=扫描没跑成，结果无意义，必须重跑**
 - 扫**全部 git 历史 + 工作区**，用**形状正则**（不是人工前缀清单）
 - 摔过三次（真 Key → 保持形状的占位符 → 我自己的工作日志抄真 Key）。
   统一根因：**靠"记得要查什么"防守，而不是靠机制。列清单必漏清单。**
@@ -22,6 +30,9 @@ python F:\LottBuild\_secret_sentinel.py     # 必须看到 RESULT: CLEAN
     **之后沙箱里的 git 走同一个 config，就能直连成功**（2026-09-28 实测推成功）。
   - **AI 的正确流程**：先试 `git push`（输出重定向到文件，别接管道）。
     成功就完事；**失败再让少爷双击 bat**。
+- 脚本三处副本必须同步（改一处必拷另外两处，比 md5）：
+  `F:/LottBuild/_secret_sentinel.py`、`~/.workbuddy/tools/secret_sentinel.py`、
+  `~/.workbuddy/skills/pre-push-secret-scrub/scripts/secret_sentinel.py`
 - 详见技能 `pre-push-secret-scrub`
 
 ## ⛔ 重写历史后：必须 force push，且 tag 会悬空 ★★
