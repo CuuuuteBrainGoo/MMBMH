@@ -692,6 +692,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
         val validation = outcome.validation ?: BetRules.validate(ticket)
         val dup = repo.judgeDuplicate(ticket)
+
+        // 少爷 2026-09-28：单张扫描识别无异常时**也直接入账**，不再多一次手动确认。
+        //
+        // 判据**与批量导入完全同一套** —— 无错误、无警告、无字段冲突、
+        // 非重复、非疑似重复。任一条不满足仍然落到下面的核对页：
+        // 金额对不上这类问题自动入账会把错账固化进账目，这条边界不能松。
+        if (BatchTriage.classify(validation, outcome.conflicts, dup.status) == DraftTriage.CLEAN) {
+            if (commitCleanScan(ticket, inputMethod, imageHash) != null) {
+                _scan.value = ScanState.Idle
+                refreshAll()
+                return
+            }
+            // 入账抛异常才会走到这里 —— 退回核对页，票不能丢
+        }
+
         // 先存草稿再进核对页：用户中途退出/闪退也不丢（§16），
         // 拿到 id 后挂在 PendingEntry 上，入账或放弃时好删
         val draftId = repo.saveDraft(
@@ -720,6 +735,57 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             imageQuality = primaryQuality()
         )
         refreshAll()
+    }
+
+    /**
+     * 单张扫描的「识别无异常 → 直接入账」（少爷 2026-09-28）。
+     *
+     * 判据与批量导入**完全同一套**（[BatchTriage.classify]）：无错误、**无警告**、
+     * 无字段冲突、非重复、非疑似重复。任何一条不满足都还是落到人工核对页。
+     *
+     * 返回新票 id；入账失败返回 null（调用方退回核对页，票不能丢）。
+     *
+     * ⚠️ 两个不能省的收尾：
+     *  1. **必须 toast** —— 用户没经过核对页，不说一声他会以为票没录进去，
+     *     回头重扫一张 → 变成重复票。
+     *  2. **必须 [autoCheckAfterCommit]** —— 跟核对页入账同一待遇；
+     *     漏了就成了「手动入账的票当场出结果，自动入账的要等明天」。
+     */
+    private suspend fun commitCleanScan(
+        ticket: RawTicket,
+        inputMethod: InputMethod,
+        imageHash: String?
+    ): Long? {
+        val newId = try {
+            val id = repo.commit(ticket, inputMethod, DuplicateStatus.UNIQUE, imageHash)
+            LedgerLog.i(
+                "Ledger",
+                "直接入账（单张·识别无异常）：${ticket.lotteryType?.display} 期 ${ticket.issue}，" +
+                    "${ticket.bets.size} 注 ${ticket.amountYuan ?: "?"} 元"
+            )
+            id
+        } catch (e: Exception) {
+            LedgerLog.e("Ledger", "直接入账失败，转为人工核对", e)
+            null
+        }
+        if (newId != null) {
+            _toast.value = Notice("已直接入账：" + describeForToast(ticket))
+            autoCheckAfterCommit(newId)
+        }
+        return newId
+    }
+
+    /**
+     * 直接入账的提示文案。
+     *
+     * 用户没经过核对页，**这行字是他唯一的核对依据** —— 必须把
+     * 彩种 / 期号 / 注数 / 金额 都带上，他扫一眼就知道读对没有。
+     */
+    private fun describeForToast(t: RawTicket): String {
+        val amt = t.amountYuan?.let {
+            if (it == kotlin.math.floor(it)) it.toLong().toString() else String.format("%.2f", it)
+        } ?: "金额未知"
+        return "${t.lotteryType?.display ?: "?"} ${t.issue} 期 · ${t.bets.size} 注 · $amt 元"
     }
 
     private suspend fun primaryQuality(): AiProviderConfig.ImageQuality {
