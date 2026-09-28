@@ -104,7 +104,7 @@ class LedgerApp : Application() {
                     LedgerLog.d("Prize", "没有待核验的票，跳过启动补核验")
                     return@launch
                 }
-                LedgerLog.i("Prize", "启动补核验：${pending.size} 张已过开奖日")
+                LedgerLog.i("Prize", "启动补核验：${pending.size} 张已过开奖时间")
                 com.bro.lotteryledger.repo.PrizeService(this@LedgerApp).checkAllPending()
             } catch (e: Exception) {
                 LedgerLog.e("Prize", "启动补核验失败", e)

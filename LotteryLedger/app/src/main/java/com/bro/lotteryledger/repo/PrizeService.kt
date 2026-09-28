@@ -53,19 +53,16 @@ class PrizeService(context: Context) {
          * 但为了避免刚开奖就跑去查拿到空结果，留一点缓冲。
          * 入账时用这个判断「要不要立刻核验」，批量核验也用它。
          *
-         * [today] / [now] 可注入，方便单测 —— 这个判断直接决定用户体验
-         * （判早了白跑网络，判晚了用户得干等到 22:30），必须有测试钉住。
+         * ⚠️ **实现委托给 [DrawSchedule]**（2026-09-28）。
+         * 以前这段判断在这里、而首页的「待核验查询」另写一份只看日期，
+         * 两边漂移 → 开奖日当天下午就误报「已过开奖日期」。
+         * 口径现在只有一个来源，这个函数保留只是为了不改动已有的调用方和测试。
          */
         fun isDrawTimePassed(
             drawDate: String?,
             today: LocalDate = LocalDate.now(),
             now: java.time.LocalTime = java.time.LocalTime.now()
-        ): Boolean {
-            val d = RedemptionDeadline.parse(drawDate) ?: return false
-            if (d.isBefore(today)) return true
-            if (d.isAfter(today)) return false
-            return now.hour >= 22
-        }
+        ): Boolean = DrawSchedule.drawTimePassed(drawDate, today, now)
 
         /**
          * 开奖日已经过去多久（天）。开奖日在未来或读不出来时返回 0。
@@ -315,7 +312,7 @@ class PrizeService(context: Context) {
      */
     suspend fun checkAllPending(): List<Pair<Long, Outcome>> = withContext(Dispatchers.IO) {
         draws.clearCache()
-        // needsCheck 的语义就是「已过开奖日期、等待获取开奖结果」
+        // needsCheck 的语义就是「已过开奖时间、等待获取开奖结果」
         val pending = repo.needsCheck()
         LedgerLog.i("Prize", "待核验 ${pending.size} 张")
         pending.map { t -> t.id to check(t.id) }

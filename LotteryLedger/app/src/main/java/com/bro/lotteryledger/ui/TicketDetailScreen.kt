@@ -50,7 +50,9 @@ fun TicketDetailScreen(
 ) {
     val t = detail.ticket
     val type = LotteryType.from(t.lotteryType)
-    val status = TicketStatus.from(t.ticketStatus)
+    // 展示修正（见 DrawSchedule.effectiveStatus）：开奖日当天还没到 22:00 的票，
+    // 库里可能是 AWAITING_RESULT，这里修正回「未开奖」。纯计算，不写库。
+    val status = DrawSchedule.effectiveStatus(TicketStatus.from(t.ticketStatus), t.drawDate)
     val accent = when (type) {
         LotteryType.SSQ -> LedgerColors.BallRed
         LotteryType.DLT -> LedgerColors.BallBlue
@@ -203,7 +205,14 @@ fun TicketDetailScreen(
                 if (draw == null) {
                     Text(
                         when (status) {
-                            TicketStatus.PENDING_DRAW -> "还没到开奖日"
+                            // 开奖日**当天**（还没到 22:00）也是 PENDING_DRAW，
+                            // 但说「还没到开奖日」会让用户困惑 —— 票面明明写着今天开奖。
+                            TicketStatus.PENDING_DRAW ->
+                                if (t.drawDate == java.time.LocalDate.now().toString()) {
+                                    "今天开奖，还没到开奖时间"
+                                } else {
+                                    "还没到开奖日"
+                                }
                             TicketStatus.AWAITING_RESULT -> "已到开奖日，官方还没公布结果"
                             TicketStatus.RESULT_UNAVAILABLE ->
                                 "官方接口里没有这一期的记录 —— 往下看，需要你手动处理"

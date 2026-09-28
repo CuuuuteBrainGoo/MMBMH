@@ -154,16 +154,24 @@ interface TicketDao {
     @Query("SELECT * FROM tickets WHERE ticket_status = :status ORDER BY draw_date ASC")
     suspend fun byStatus(status: String): List<TicketEntity>
 
-    /** 待核验：开奖日期已过（或就是今天）但状态还是未开奖 */
+    /**
+     * 待核验：开奖日期**确实已过**（`draw_date <= cutoff`），但状态还没出结果。
+     *
+     * ⚠️ `cutoff` **不是「今天」**，是 [com.bro.lotteryledger.core.DrawSchedule.checkCutoff]
+     * 算出的「已过开奖时间的最大日期」—— 当天 22:00 之前它等于**昨天**。
+     * 直接把今天当截止日，就会让开奖日**当天下午**的票被提前判成
+     * 「已过开奖日期」（2026-09-28 少爷报的 bug：大乐透当晚 21:30 才开奖，
+     * 18:12 首页就弹了「有 1 张彩票已过开奖日期」）。
+     */
     @Query(
         """
         SELECT * FROM tickets
-        WHERE draw_date <= :today
+        WHERE draw_date <= :cutoff
           AND ticket_status IN ('PENDING_DRAW', 'AWAITING_RESULT')
         ORDER BY draw_date ASC
         """
     )
-    suspend fun needingCheck(today: String): List<TicketEntity>
+    suspend fun needingCheck(cutoff: String): List<TicketEntity>
 
     @Transaction
     suspend fun insertWithBets(ticket: TicketEntity, bets: List<TicketBetEntity>): Long {

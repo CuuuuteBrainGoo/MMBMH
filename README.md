@@ -17,8 +17,8 @@
 
 | 文件 | 用途 |
 |---|---|
-| **`LotteryLedger-v1.6.1-release-signed.apk`**（13 MB） | **装这个** —— 体积小，无调试信息 |
-| `LotteryLedger-v1.6.1-debug-signed.apk`（20 MB） | 调试用，带完整日志 |
+| **`LotteryLedger-v1.6.2-release-signed.apk`**（13 MB） | **装这个** —— 体积小，无调试信息 |
+| `LotteryLedger-v1.6.2-debug-signed.apk`（20 MB） | 调试用，带完整日志 |
 
 > 手机上点开 APK 就能装，需要先允许「安装未知来源应用」。
 > 签名是 Android 默认调试证书，**适合自用，不适合上架应用商店。**
@@ -145,8 +145,8 @@ apk/                          ← 交付的安装包
 唯一来源是 `LotteryLedger/version.properties`：
 
 ```properties
-versionCode=14
-versionName=1.6.1
+versionCode=15
+versionName=1.6.2
 ```
 
 - `versionCode` 每次发安装包 **必须 +1**（Android 靠它判断是不是新版本）

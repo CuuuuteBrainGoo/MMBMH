@@ -195,13 +195,16 @@ class LedgerRepository(context: Context) {
 
     /**
      * 初始状态（§9）：
-     *  - 票面开奖日期还没到 → 未开奖
-     *  - 已到/已过  → 已过开奖时间，去官网查
+     *  - 还没到开奖时间（含「开奖日当天但没到 22:00」）→ 未开奖
+     *  - 已过开奖时间 → 等待开奖结果，去官网查
+     *
+     * ⚠️ 以前这里只比日期字符串（`drawDate > today`），于是**开奖日当天下午**
+     * 录入的票一进来就被标成「等待开奖结果」—— 而当晚 21:30 才开奖。
+     * 现在统一走 [DrawSchedule]，与核验层、展示层同口径。
      */
-    private fun initialStatus(drawDate: String): TicketStatus {
-        val today = java.time.LocalDate.now().toString()
-        return if (drawDate > today) TicketStatus.PENDING_DRAW else TicketStatus.AWAITING_RESULT
-    }
+    private fun initialStatus(drawDate: String): TicketStatus =
+        if (DrawSchedule.drawTimePassed(drawDate)) TicketStatus.AWAITING_RESULT
+        else TicketStatus.PENDING_DRAW
 
     // ---------------- 查询 ----------------
 
@@ -242,8 +245,16 @@ class LedgerRepository(context: Context) {
         )
     }
 
-    suspend fun needsCheck(today: String = java.time.LocalDate.now().toString()): List<TicketEntity> =
-        ticketDao.needingCheck(today)
+    /**
+     * 待核验队列：**确实已经过了开奖时间**、但还没有结果的票。
+     *
+     * [cutoff] 由 [DrawSchedule.checkCutoff] 给出 —— 当天还没到 22:00 时它是**昨天**，
+     * 所以开奖日当天（哪怕日期已经是今天）不会被提前捞出来。
+     * 以前默认值是 `LocalDate.now()`，只比日期 → 开奖日下午就误报
+     * 「已过开奖日期」（2026-09-28 少爷报的那个 bug）。
+     */
+    suspend fun needsCheck(cutoff: String = DrawSchedule.checkCutoff()): List<TicketEntity> =
+        ticketDao.needingCheck(cutoff)
 
     /** 按状态取票（用于扫「待兑奖是否已过截止日」）。 */
     suspend fun ticketsByStatus(status: String): List<TicketEntity> = ticketDao.byStatus(status)

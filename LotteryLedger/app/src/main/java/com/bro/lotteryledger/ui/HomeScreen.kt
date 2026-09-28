@@ -285,7 +285,7 @@ fun HomeScreen(
             if (state.needsCheckCount > 0) {
                 item {
                     InfoBanner(
-                        text = "有 ${state.needsCheckCount} 张彩票已过开奖日期，等待获取开奖结果",
+                        text = "有 ${state.needsCheckCount} 张彩票已过开奖时间，等待获取开奖结果",
                         action = {
                             if (checking) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1181,7 +1181,11 @@ private fun TicketCard(
     onClick: () -> Unit
 ) {
     val type = LotteryType.from(t.lotteryType)
-    val status = TicketStatus.from(t.ticketStatus)
+    // 展示修正（见 DrawSchedule.effectiveStatus）：库里存的 AWAITING_RESULT
+    // 只代表「录入当时已过开奖时间」，票入库后状态不会随时间自己变。
+    // 开奖日当天还没到 22:00 的票，这里修正回「未开奖」——
+    // 否则会出现「当晚 21:30 才开奖，下午就显示等待开奖结果」。纯计算，不写库。
+    val status = DrawSchedule.effectiveStatus(TicketStatus.from(t.ticketStatus), t.drawDate)
     val accent = when (type) {
         LotteryType.SSQ -> LedgerColors.BallRed
         LotteryType.DLT -> LedgerColors.BallBlue
