@@ -9,6 +9,10 @@
 > 自己用的工具，做出来是因为市面上的彩票 App 要么在卖推荐、要么把数据传走。
 > 这个只做一件事：**记清楚我买了多少、中了多少、亏了多少。**
 
+> 🔧 **要在另一台机器上把这个工程跑起来（换电脑 / 重装系统）？**
+> 看 **[`SETUP.md`](SETUP.md)** —— 工具链怎么装、签名密钥怎么恢复、常用命令一次说清。
+> 接手的 agent 看 **[`AGENT-BOOTSTRAP.md`](AGENT-BOOTSTRAP.md)**。
+
 ---
 
 ## 📲 想直接装？
@@ -117,19 +121,27 @@ LotteryLedger/
     repo/                     ← 设置存储、备份编解码、Key 加密存储
     ui/                       ← Compose 界面
   app/src/test/               ← 单元测试（约 460 个）
+tools/                        ← 构建/打包/签名/发版/体检脚本（纯标准库）
 UI Design/                    ← 网页原型，不参与编译
-apk/                          ← 交付的安装包
+apk/                          ← 交付的安装包 + 真机验收清单
+SETUP.md                      ← 从零重建环境（换机器看这个）
+AGENT-BOOTSTRAP.md            ← 接手项目的 agent 的提示词
 ```
 
 ---
 
 ## 编译
 
-需要 JDK 17 + Android SDK（compileSdk 34）。
+需要 JDK 17 + Android SDK（compileSdk 34）+ Gradle 8.7，
+**完整安装步骤见 [`SETUP.md`](SETUP.md)**（工程里没有 `gradlew`，直接调独立 Gradle）。
 
 ```bash
-./gradlew assembleRelease
+python tools/doctor.py            # 先体检
+python tools/_build_and_test.py   # 同步 + 编译 + 单测
+python tools/_pack.py             # 出安装包（双变体 + 签名）
 ```
+
+`tools/` 里每个脚本干什么，见 [`tools/README.md`](tools/README.md)。
 
 ### 关于两个目录
 

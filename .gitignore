@@ -52,6 +52,10 @@ signing.properties
 *.tmp
 *.bak
 
+# Python 工具脚本的缓存（tools/ 里有 .py 脚本）
+__pycache__/
+*.pyc
+
 # ===== 本地辅助脚本 =====
 # 推送助手（推送到GitHub.bat + PUSH-README.txt）只在少爷这台机器上
 # 双击用，别的地方 clone 下来也用不上，而且路径写死成本机路径。
