@@ -28,9 +28,8 @@ internal object FailureText {
                     || lower.contains("does not exist or you do not have access")
                     || lower.contains("targeted an endpoint that does not exist") ->
                 "这不是地址错了，是「模型」这一栏填得不对。\n" +
-                    "火山方舟（豆包）必须填「推理接入点 ID」（ep- 开头），方舟靠它路由到具体模型；\n" +
-                    "填模型名有时候能通，但只要那个模型没在你的账号里开通，就会报这个错。\n" +
-                    "去方舟控制台「在线推理 → 推理接入点」创建并复制接入点 ID 填进来。"
+                    "请确认对应模型已开通，再复制控制台调用示例中的模型 ID 或接入点 ID（ep- 开头）；\n" +
+                    "不要抄页面展示名称。使用接入点时，接口地址与接入点区域也必须一致。"
 
             // 平台自带的业务错误码优先（它们通常也返回 4xx）
             lower.contains("model_not_found") || lower.contains("model not exist")
@@ -77,10 +76,8 @@ internal object FailureText {
     fun platformTip(kind: AiProviderKind): String? = when (kind) {
         AiProviderKind.DOUBAO ->
             "火山方舟的地址填 https://ark.cn-beijing.volces.com/api/v3。" +
-                "「模型」这一栏「必须填推理接入点 ID」（ep- 开头，如 ep-m-xxxx），" +
-                "不能填 doubao-seed-xxx 这类模型名 —— 填模型名会报 404 " +
-                "「model or endpoint does not exist」。" +
-                "接入点在方舟控制台「在线推理 → 推理接入点」里创建并复制。" +
+                "「模型」这一栏填已开通模型的 Model ID，或 ep- 开头的推理接入点 ID。" +
+                "从控制台「调用示例」复制 model 字段，不要填列表展示名称。" +
                 "注意接入点与区域绑定，地址要和创建接入点时选的区域一致。"
         AiProviderKind.HUNYUAN ->
             "混元 OpenAI 兼容端点是 https://api.hunyuan.cloud.tencent.com/v1，视觉模型填 hunyuan-vision。"

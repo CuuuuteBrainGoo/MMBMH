@@ -4,6 +4,7 @@ import android.util.Base64
 import com.bro.lotteryledger.core.AiProviderConfig
 import com.bro.lotteryledger.core.AiProviderKind
 import com.bro.lotteryledger.core.LedgerLog
+import com.bro.lotteryledger.core.ThinkingLevel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -128,7 +129,9 @@ object ConnectivityProbe {
         model: String,
         apiKey: String,
         timeoutSeconds: Int = 30,
-        includeImage: Boolean = true
+        includeImage: Boolean = true,
+        provider: AiProviderKind = AiProviderKind.CUSTOM,
+        thinkingLevel: ThinkingLevel = ThinkingLevel.FAST
     ): Report = withContext(Dispatchers.IO) {
 
         val steps = mutableListOf<Step>()
@@ -179,7 +182,7 @@ object ConnectivityProbe {
 
         // --- 第 2/3 级：真的发一次 ---
         val started = System.currentTimeMillis()
-        val body = buildProbeBody(model, includeImage)
+        val body = buildProbeBody(model, includeImage, baseUrl, provider, thinkingLevel)
 
         val request = Request.Builder()
             .url(endpoint)
@@ -286,11 +289,16 @@ object ConnectivityProbe {
      * 有 130~160 个 token 是思维链，只有 1~2 个是真正的正文。
      * 给 16 会把思维链截断，导致拿不到正文而误判为失败。
      */
-    private fun buildProbeBody(model: String, includeImage: Boolean): String {
+    internal fun buildProbeBody(
+        model: String, includeImage: Boolean, baseUrl: String = "",
+        provider: AiProviderKind = AiProviderKind.CUSTOM,
+        thinkingLevel: ThinkingLevel = ThinkingLevel.FAST
+    ): String {
         val obj = JSONObject()
         obj.put("model", model)
         obj.put("max_tokens", 512)
         obj.put("temperature", 0.0)
+        ThinkingRequestPolicy.apply(obj, provider, baseUrl, model, thinkingLevel)
 
         val content = JSONArray()
         if (includeImage) {

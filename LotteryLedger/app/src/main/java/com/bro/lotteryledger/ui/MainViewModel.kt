@@ -584,7 +584,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val primary = all.firstOrNull { it.role == "primary" || it.role == "both" }
         if (primary == null) {
             LedgerLog.w("Scan", "没有可用的主识别平台")
-            onProblem("还没有可用的识别平台。请先到「设置 → AI 平台」添加一个并填写 API Key。")
+            onProblem("没有已启用的主识别平台。请到「设置 → AI 识别平台」启用一个主识别平台，或添加平台并填写 API Key。")
             return null
         }
         val primaryKey = keys.get(primary.apiKeyRef)
@@ -628,6 +628,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         )
         // 记录调用（§1.2）—— 失败也要记，否则统计不到失败的消耗
         outcome.runs.forEach { repo.saveRun(it) }
+        LedgerLog.i("Scan", "AI阶段结束：主识别=${outcome.runs.firstOrNull()?.latencyMs ?: 0}ms " +
+            "复核=${outcome.runs.drop(1).sumOf { it.latencyMs }}ms 已复核=${outcome.reviewed}")
         outcome
     } catch (e: Exception) {
         LedgerLog.e("Scan", "识别流程抛出异常", e)
@@ -1801,7 +1803,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 id = existing?.id ?: 0,
                 name = name.ifBlank { kind.display },
                 provider = kind.code,
-                enabled = true,
+                enabled = existing?.enabled ?: true,
                 baseUrl = fullUrl,
                 model = model.trim(),
                 apiKeyRef = ref,
@@ -1814,6 +1816,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             repo.saveProvider(entity)
             loadProviders()
             _toast.value = Notice("已保存「$name」")
+        }
+    }
+
+    fun setProviderEnabled(id: Long, enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                repo.setProviderEnabled(id, enabled)
+                _providers.value = repo.providers()
+            } catch (e: Exception) {
+                LedgerLog.e("Settings", "保存平台开关失败", e)
+                _toast.value = Notice("开关保存失败，请重试", NoticeKind.ERROR)
+            }
         }
     }
 
@@ -1866,7 +1880,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 baseUrl = baseUrl,
                 model = model,
                 apiKey = key,
-                timeoutSeconds = timeoutSeconds
+                timeoutSeconds = timeoutSeconds,
+                provider = kind,
+                thinkingLevel = _thinkingLevel.value
             )
 
             // 附一条该平台专属排错贴士（只在失败时才有价值）

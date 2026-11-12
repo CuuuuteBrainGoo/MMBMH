@@ -24,6 +24,15 @@ interface AiProviderDao {
     @Update
     suspend fun update(e: AiProviderEntity)
 
+    @Query("UPDATE ai_providers SET enabled = :enabled WHERE id = :id")
+    suspend fun setEnabled(id: Long, enabled: Boolean)
+
+    @Transaction
+    suspend fun updatePreservingEnabled(e: AiProviderEntity) {
+        val current = byId(e.id) ?: return
+        update(e.copy(enabled = current.enabled))
+    }
+
     @Query("DELETE FROM ai_providers WHERE id = :id")
     suspend fun delete(id: Long)
 }

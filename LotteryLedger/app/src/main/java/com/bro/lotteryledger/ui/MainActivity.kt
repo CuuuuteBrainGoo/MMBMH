@@ -442,6 +442,7 @@ private fun LedgerRootContent(vm: MainViewModel) {
                         vm.saveProvider(e, n, k, u, m, r, key, t, ret, q, temp)
                     },
                     onDelete = { vm.deleteProvider(it) },
+                    onProviderEnabled = { id, enabled -> vm.setProviderEnabled(id, enabled) },
                     onOpenLogs = { route = Route.Logs },
                     onOpenHelp = { route = Route.Help },
                     onExportBackup = {

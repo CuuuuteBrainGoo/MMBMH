@@ -26,6 +26,13 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
+    // 恢复开发时直接使用原签名文件，避免 Gradle 在用户目录自动生成另一把调试密钥。
+    signingConfigs.getByName("debug") {
+        System.getenv("MMBMH_KEYSTORE")?.takeIf { it.isNotBlank() }?.let {
+            storeFile = file(it)
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -92,5 +99,6 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation("org.json:json:20240303")
 }

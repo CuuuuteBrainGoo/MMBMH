@@ -35,7 +35,7 @@ def main():
         print("=" * 66)
         print("  不能用新生成的密钥代替 —— 那会让新包装不上已安装的旧包，")
         print("  只能卸载重装，而卸载会清掉账本数据。")
-        print("  去重装前的备份邮件里取出 debug.keystore，放回上面的路径。")
+        print("  请通过 MMBMH_KEYSTORE 指定与旧版相同的签名文件。")
         print("=" * 66)
         return 3
 

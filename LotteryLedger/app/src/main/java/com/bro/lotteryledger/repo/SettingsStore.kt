@@ -10,7 +10,7 @@ import kotlinx.coroutines.withContext
  * 零散设置的读写（落在 `app_settings` 这张现成的 key-value 表上）。
  *
  * 为什么不给 `ai_providers` 加字段：那要改 DB version + 写 Migration，
- * 而少爷手机上**已经有真实账目**（双色球、大乐透各一张）。
+ * 已有安装可能包含真实账目，需要保留原有数据。
  * 迁移一旦写错就是账目全丢。这张表本来就是给这类设置准备的，用它零风险。
  *
  * 读取失败一律回落到默认值：设置读不出来不该让主流程崩。

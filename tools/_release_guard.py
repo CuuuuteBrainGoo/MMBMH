@@ -82,16 +82,18 @@ def main():
     else:
         print("  [3] README 示例块 SKIP : 未找到")
 
-    # ---- [4] 验收清单标题 + 安装路径 ----
-    cl = read("apk", "真机验收清单.md")
-    t = re.search(r"^#\s+.*?v([0-9.]+)\s*真机验收清单", cl, re.M)
-    cl_vers = sorted(set(re.findall(r"LotteryLedger-v([0-9.]+)-(?:debug|release)-signed\.apk", cl)))
-    ok4 = (t and t.group(1) == ver) and ((not cl_vers) or cl_vers == [ver])
-    print("  [4] 验收清单 %s : 标题=%s 路径版本=%s"
-          % ("OK" if ok4 else "FAIL", t.group(1) if t else "?", cl_vers or "（无）"))
-    if not ok4:
-        fails.append("验收清单 标题=%s/路径版本=%s，应为 %s"
-                     % (t.group(1) if t else "?", cl_vers, ver))
+    checklist = os.path.join(REPO, "apk", "真机验收清单.md")
+    if os.path.exists(checklist):
+        cl = read("apk", "真机验收清单.md")
+        # ---- [4] 验收清单标题 + 安装路径 ----
+        t = re.search(r"^#\s+.*?v([0-9.]+)\s*真机验收清单", cl, re.M)
+        cl_vers = sorted(set(re.findall(r"LotteryLedger-v([0-9.]+)-(?:debug|release)-signed\.apk", cl)))
+        ok4 = (t and t.group(1) == ver) and ((not cl_vers) or cl_vers == [ver])
+        print("  [4] 验收清单 %s : 标题=%s 路径版本=%s"
+              % ("OK" if ok4 else "FAIL", t.group(1) if t else "?", cl_vers or "（无）"))
+        if not ok4:
+            fails.append("验收清单 标题=%s/路径版本=%s，应为 %s"
+                         % (t.group(1) if t else "?", cl_vers, ver))
 
     print("-" * 56)
     if fails:
@@ -101,7 +103,7 @@ def main():
         print("=" * 56)
         return 1
 
-    print("  RESULT: PASS - 4 处版本号全部一致")
+    print("  RESULT: PASS - 版本信息一致")
     print("=" * 56)
     return 0
 

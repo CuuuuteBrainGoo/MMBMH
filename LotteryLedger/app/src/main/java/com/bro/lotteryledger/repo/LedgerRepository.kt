@@ -363,8 +363,15 @@ class LedgerRepository(context: Context) {
 
     suspend fun enabledProviders(): List<AiProviderEntity> = providerDao.enabled()
 
-    suspend fun saveProvider(e: AiProviderEntity): Long =
-        if (e.id == 0L) providerDao.insert(e) else { providerDao.update(e); e.id }
+    suspend fun saveProvider(e: AiProviderEntity): Long {
+        return if (e.id == 0L) providerDao.insert(e) else {
+            // 编辑其它字段时保留数据库里的开关状态，不能把停用的平台重新打开。
+            providerDao.updatePreservingEnabled(e)
+            e.id
+        }
+    }
+
+    suspend fun setProviderEnabled(id: Long, enabled: Boolean) = providerDao.setEnabled(id, enabled)
 
     suspend fun deleteProvider(id: Long) = providerDao.delete(id)
 

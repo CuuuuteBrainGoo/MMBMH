@@ -2,9 +2,9 @@ package com.bro.lotteryledger.ai
 
 import com.bro.lotteryledger.core.AiCallResult
 import com.bro.lotteryledger.core.AiProviderConfig
-import com.bro.lotteryledger.core.AiProviderKind
 import com.bro.lotteryledger.core.EndpointNormalizer
 import com.bro.lotteryledger.core.VisionPrompt
+import com.bro.lotteryledger.core.LedgerLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -48,7 +48,12 @@ class OpenAiCompatibleClient(
         imageBase64: String,
         prompt: String
     ): AiCallResult = withContext(Dispatchers.IO) {
-        val started = System.currentTimeMillis()
+        val started = System.nanoTime()
+        fun elapsedMs() = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)
+
+        if (!cfg.enabled) {
+            return@withContext AiCallResult(null, null, null, 0, null, "平台已停用，请先在设置中启用")
+        }
 
         if (cfg.baseUrl.isBlank()) {
             return@withContext AiCallResult(null, null, null, 0, null, "接口地址未填写")
@@ -67,6 +72,11 @@ class OpenAiCompatibleClient(
         }
 
         val body = buildBody(cfg, imageBase64, prompt)
+        val sentParams = JSONObject(body)
+        val thinkingDescription = listOfNotNull(
+            sentParams.optJSONObject("thinking")?.optString("type")?.let { "thinking=$it" },
+            sentParams.optString("reasoning_effort", "").takeIf { it.isNotEmpty() }?.let { "effort=$it" }
+        ).joinToString(" ").ifEmpty { "未发送（由平台决定）" }
 
         val request = Request.Builder()
             .url(endpoint)
@@ -82,9 +92,12 @@ class OpenAiCompatibleClient(
         // 用显式下标循环，避免在 use{} 的 inline lambda 里 continue
         var attempt = 1
         while (attempt <= attempts) {
-            attempt++
+            val currentAttempt = attempt++
+            val timing = AiRequestTiming()
+            LedgerLog.i("AI耗时", "请求 $currentAttempt/$attempts：平台=${cfg.provider.code} 模型=${cfg.model} 思考参数=$thinkingDescription")
             try {
                 val client = okHttp.newBuilder()
+                    .eventListener(timing)
                     .readTimeout(cfg.timeoutSeconds.toLong(), TimeUnit.SECONDS)
                     // callTimeout 是整个调用的硬上限，必须比 readTimeout 宽出一截，
                     // 否则读超时还没到，callTimeout 先把连接掐了
@@ -93,8 +106,9 @@ class OpenAiCompatibleClient(
 
                 val result = client.newCall(request).execute().use { resp ->
                     val text = resp.body?.string().orEmpty()
-                    val latency = System.currentTimeMillis() - started
+                    val latency = elapsedMs()
                     lastStatus = resp.code
+                    LedgerLog.i("AI耗时", "请求 $currentAttempt HTTP ${resp.code}：${timing.summary()}")
 
                     if (!resp.isSuccessful) {
                         lastError = FailureText.describe(resp.code, text, endpoint)
@@ -108,8 +122,11 @@ class OpenAiCompatibleClient(
                         lastError = "响应里没有可用的文本内容"
                         return@use Triple(null, latency, false)
                     }
+                    val reasoningTokens = reasoningTokens(text)
+                    LedgerLog.i("AI耗时", "请求成功：累计=${latency}ms 尝试=$currentAttempt " +
+                        "平台报告思考token=${reasoningTokens ?: "未提供"}")
                     // 成功：用外层标记 + 结果返回
-                    return@withContext AiCallResult(content, pt, ct, latency, resp.code, null)
+                    return@withContext AiCallResult(content, pt, ct, latency, resp.code, null, reasoningTokens, currentAttempt)
                 }
                 if (result.third) break
             } catch (e: java.io.InterruptedIOException) {
@@ -123,9 +140,11 @@ class OpenAiCompatibleClient(
             } catch (e: Exception) {
                 lastError = "${e.javaClass.simpleName}: ${e.message}"
             }
+            LedgerLog.w("AI耗时", "请求 $currentAttempt 未成功：${timing.summary()}；" +
+                if (attempt <= attempts) "准备重试" else "重试次数已用完")
         }
 
-        AiCallResult(null, null, null, System.currentTimeMillis() - started, lastStatus, lastError ?: "未知错误")
+        AiCallResult(null, null, null, elapsedMs(), lastStatus, lastError ?: "未知错误", attemptCount = attempt - 1)
     }
 
     /** 构造 OpenAI 兼容请求体。 */
@@ -134,20 +153,7 @@ class OpenAiCompatibleClient(
         obj.put("model", cfg.model)
         obj.put("temperature", cfg.temperature)
 
-        // ---- 火山方舟的「思考强度」----
-        // `reasoning_effort` 是平台官方的思考强度开关，7 档：none/minimal/low/medium/high/xhigh/max。
-        // **平台默认 high（深度分析），所以不传这个参数就会很慢。**
-        //
-        // 实测（同一张票面、同一提示词、同一接入点）：
-        //   minimal →  3.4 秒，思维链 0
-        //   low     → 13.8 秒，思维链 242
-        //   high    → 23.9 秒，思维链 609   ← 平台默认值
-        // 三档的**正文长度都是 508~510 字，质量没有差别** —— 思考对本任务是纯开销。
-        //
-        // 只对豆包传：别的平台没有这个字段，乱传会直接 400。
-        if (cfg.provider == AiProviderKind.DOUBAO) {
-            obj.put("reasoning_effort", cfg.thinkingLevel.effort)
-        }
+        ThinkingRequestPolicy.apply(obj, cfg.provider, cfg.baseUrl, cfg.model, cfg.thinkingLevel)
 
         val messages = JSONArray()
         val msg = JSONObject()
@@ -174,6 +180,13 @@ class OpenAiCompatibleClient(
     }
 
     /** 从响应里取正文与 token 用量。 */
+    private fun reasoningTokens(text: String): Int? = try {
+        val details = JSONObject(text).optJSONObject("usage")?.optJSONObject("completion_tokens_details")
+        if (details != null && details.has("reasoning_tokens") && !details.isNull("reasoning_tokens"))
+            details.optInt("reasoning_tokens").takeIf { it >= 0 }
+        else null
+    } catch (_: Exception) { null }
+
     private fun extractContent(text: String): Triple<String?, Int?, Int?> {
         val root = try {
             JSONObject(text)

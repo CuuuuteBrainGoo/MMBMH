@@ -1,37 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-推送前密钥哨兵 (pre-push secret sentinel)
-
-WHY THIS EXISTS:
-  Bro 在 2026-09-27 因为真 Key 泄漏被 GitHub Push Protection 拦了 THREE TIMES.
-  三次的根因都一样：靠「人脑记住要查什么」来防守 ——
-    第 1 次：根本没查源码
-    第 2 次：查了，但前缀清单漏了 ark-
-    第 3 次：查了源码，但没查 .workbuddy/memory/ 工作日志
-  「列清单」这个动作本身就是漏洞源。所以改成机制防守：
-
-  本脚本扫描 **git 全部历史 + 工作区**，用「形状正则」而不是人工前缀清单，
-  覆盖所有已知平台凭据格式。任何命中都必须人工过一眼才能继续。
-
-USAGE:
-  python secret_sentinel.py <仓库路径>          # ← 推荐：显式传路径，不可能传错
-  python secret_sentinel.py                    # 扫当前工作目录所在的 git 仓库
-  python secret_sentinel.py --staged           # 只扫暂存区（快，pre-commit 用）
-
-  ⚠️ 脚本装在与仓库不同的目录时（本项目：脚本在 F:/LottBuild，仓库在 F:/Projects/...），
-     直接 cd 到脚本目录裸跑 = 扫了一个「不是 git 仓库」的目录。
-     这种情况本脚本会直接 ABORT，不会给假的 CLEAN。
-
-EXIT CODE:
-  0 = 干净，可以推
-  1 = 发现疑似密钥，STOP，别推
-  2 = 扫描无法完成（传错目录 / 文件被截断）—— 不得据此判断安全，必须重跑
-
-安装位置（全局，跨项目通用）：
-  C:\\Users\\36097\\.workbuddy\\tools\\secret_sentinel.py
-  技能副本： ~/.workbuddy/skills/pre-push-secret-scrub/scripts/secret_sentinel.py
-"""
+"""扫描 Git 历史与工作区中的疑似凭据。扫描失败返回非零退出码，不报告为干净。"""
 
 import os
 import re
@@ -40,14 +9,7 @@ import sys
 
 
 class SentinelAbort(Exception):
-    """扫描无法完成（传错目录 / 文件被截断）。
-
-    存在的唯一理由：**绝不允许降级成 CLEAN**。
-    2026-09-28 实测：脚本装在 F:/LottBuild，在脚本目录裸跑时 REPO 不是 git 仓库，
-    历史扫描被跳过（「scan SKIPPED」只是一行 warning），然后照样打印
-    「RESULT: CLEAN - safe to push」。等于白跑一趟还以为通过了。
-    「只扫工作区」不能叫「扫过了」——不能验证全部提交的结论没有意义。
-    """
+    """扫描无法完成时中止，不能据此判定安全。"""
     pass
 
 
@@ -137,6 +99,8 @@ WHITELIST_CONTEXT = [
 
 
 def run(cmd, cwd=REPO):
+    if cmd and cmd[0] == "git":
+        cmd = ["git", "-c", "core.quotepath=false"] + cmd[1:]
     return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True,
                           encoding="utf-8", errors="replace")
 
@@ -164,7 +128,10 @@ def scan_text(name, text):
 
 def scan_history():
     print("[1/2] scanning git history ...")
-    revs = run(["git", "rev-list", "--all"]).stdout.split()
+    rev_result = run(["git", "rev-list", "--all"])
+    if rev_result.returncode != 0:
+        raise SentinelAbort("无法读取提交历史，扫描已中止")
+    revs = rev_result.stdout.split()
     STATS["commits"] = len(revs)
     if not revs:
         # 非 git 仓库：直接 ABORT，绝不降级成「只扫工作区 + 报 CLEAN」
@@ -178,7 +145,11 @@ def scan_history():
         return []
     # git grep -E 跨全部提交，比逐个 show 快得多
     combined = "|".join(p.pattern for _, p in PATTERNS)
-    r = run(["git", "grep", "-nIE", combined, "--"] + revs)
+    r = run(["git", "grep", "-nIP", combined] + revs + ["--", ".",
+        ":(exclude)*.apk", ":(exclude)*.idsig", ":(exclude)*.png",
+        ":(exclude)*.jpg", ":(exclude)*.jpeg", ":(exclude)*.webp"])
+    if r.returncode not in (0, 1):
+        raise SentinelAbort("历史内容扫描失败，不能判定为干净")
     findings = []
     seen = set()
     for line in (r.stdout or "").splitlines():
@@ -251,8 +222,10 @@ def _scan_file_set(rel_paths):
 
 def scan_worktree():
     print("[2/2] scanning working tree ...")
-    r = run(["git", "ls-files", "--cached", "--others", "--exclude-standard"])
-    entries = [e for e in (r.stdout or "").splitlines() if e.strip()]
+    r = run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"])
+    if r.returncode != 0:
+        raise SentinelAbort("无法读取工作区文件清单")
+    entries = [e for e in (r.stdout or "").split("\0") if e]
 
     if entries:
         print("      mode: git tracked files")

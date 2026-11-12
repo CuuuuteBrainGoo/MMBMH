@@ -1,35 +1,11 @@
 # -*- coding: utf-8 -*-
-"""工具链路径配置 —— **全项目唯一一处**。
-
-## 为什么单独抽出来
-
-原来每个脚本各自硬编码 `F:/LottBuild` 和 `F:/Projects/MMBMH-mony mony back my home`，
-换一台机器（或格式化重装）就要改十几个文件、漏一个就跑错。
-
-现在所有脚本都 `from _paths import ...`，**换机只改这里**，或者更省事——
-设两个环境变量就行（优先级高于下面的默认值）：
-
-    MMBMH_PROJ    仓库根（源码 + apk + 文档）
-    MMBMH_BUILD   编译工作区（JDK / SDK / gradle / 编译副本）
-
-## 为什么编译工作区不放在仓库里
-
-JDK 17 + Android SDK + Gradle 加起来 1 GB 以上，**是"随时能重新下载的工具"，
-不是项目文件**。放进仓库只会让 clone 变慢几十倍。
-它们的安装方法见仓库根目录的 `SETUP.md`。
-
-## 为什么 `LotteryLedger` 有两份
-
-工作区路径含中文和空格，`aapt2` 对这种路径不稳定 —— 所以编译时会把工程
-同步到纯 ASCII 路径的副本（`BUILD/LotteryLedger`）再编。
-**两份是独立副本，不是一个目录**，改完工作区必须同步过去（`run_build.py` 会做）。
-"""
+"""构建工具共用路径配置。支持 MMBMH_PROJ、MMBMH_BUILD、MMBMH_JDK 和 MMBMH_KEYSTORE 环境变量。"""
 import os
 import sys
 
 # ---------- 两个根 ----------
-PROJ = os.environ.get("MMBMH_PROJ") or r"F:\Projects\MMBMH-mony mony back my home"
-BUILD = os.environ.get("MMBMH_BUILD") or r"F:\LottBuild"
+PROJ = os.environ.get("MMBMH_PROJ") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BUILD = os.environ.get("MMBMH_BUILD") or os.path.join(PROJ, "build-work")
 
 # ---------- 仓库内 ----------
 TOOLS = os.path.dirname(os.path.abspath(__file__))
@@ -41,7 +17,7 @@ CHECKLIST_HIST = os.path.join(APK_DIR, "验收清单-历史.md")
 
 # ---------- 编译工作区内 ----------
 SRC_BUILD = os.path.join(BUILD, "LotteryLedger")
-JDK = os.path.join(BUILD, "jdk17", "jdk")
+JDK = os.environ.get("MMBMH_JDK") or os.path.join(BUILD, "jdk17", "jdk")
 SDK = os.path.join(BUILD, "android-sdk")
 GRADLE = os.path.join(BUILD, "gradle-dist", "gradle-8.7", "bin", "gradle.bat")
 GHOME = os.path.join(BUILD, "gradle-home")
@@ -51,8 +27,8 @@ LAST_PACK_VERSION = os.path.join(BUILD, ".last_pack_version")
 
 # ---------- 签名 ----------
 # ⚠️ 这把密钥**必须**跟上一版是同一把。换了就装不上（签名不符）→
-# 只能卸载重装 → 手机上的账本数据全部丢失。丢了就去重装前发的备份邮件里找。
-KEYSTORE = os.path.expanduser(os.path.join("~", ".android", "debug.keystore"))
+# 只能卸载重装 → 手机上的账本数据全部丢失。请保管好原签名文件。
+KEYSTORE = os.environ.get("MMBMH_KEYSTORE") or os.path.expanduser(os.path.join("~", ".android", "debug.keystore"))
 KS_ALIAS = "androiddebugkey"
 KS_PASS = "android"      # Android 调试密钥的固定口令，不是秘密（Android 官方约定）
 KEY_PASS = "android"
@@ -106,13 +82,13 @@ def require(with_keystore=True):
     for name, path in miss:
         print("   缺 %-14s %s" % (name, path))
     print("-" * 66)
-    print("  按仓库根目录 SETUP.md 装齐这些东西；")
+    print("  按仓库根目录 tools/README.md 装齐这些东西；")
     print("  或者设环境变量 MMBMH_PROJ / MMBMH_BUILD 指向你实际的路径。")
     if any(n == "签名密钥" for n, _ in miss):
         print()
         print("  !! 签名密钥不是「装上就有」的东西 ——")
         print("  !! 你以前打的包用的是这一把，换成新的就**装不上去**（只能卸载，账本数据会丢）。")
-        print("  !! 去重装前发的那封备份邮件里把 debug.keystore 取出来放回上面的路径。")
+        print("  !! 请指定与旧版相同的签名文件后重试。")
     print("=" * 66)
     raise SystemExit(3)
 

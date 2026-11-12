@@ -1,25 +1,5 @@
 # -*- coding: utf-8 -*-
-"""为当前版本创建 GitHub Release，并把两个 APK 作为附件传上去。
-
-## 为什么必须单独做这步
-
-README 顶部的版本徽章读的是 **GitHub Release**，不是仓库里的文件。
-「代码 push 了」不等于「Release 存在」—— 只 push 不建 Release，
-徽章会一直显示旧版本（2026-09-28 踩过）。
-
-## 安全要求（踩过两次泄漏，绝不重犯）
-
-  - token 从 git credential 现取，**绝不写进文件、绝不打印**
-  - 只打印 HTTP 状态码和 Release 元数据，不打印任何凭据
-
-## 用法
-
-    python _make_release.py                      # 发布说明用默认文案
-    python _make_release.py --notes "本次改动…"   # 自定义公布说明
-    python _make_release.py --notes-file notes.md
-
-重复跑是安全的：Release 已存在会复用，同名附件会跳过。
-"""
+"""为当前版本创建 GitHub Release 并上传 APK。凭据通过 Git credential helper 获取，不写入文件或日志。"""
 import io
 import json
 import os
@@ -74,7 +54,7 @@ VER = version_name()
 TAG = "v" + VER
 TOK = read_token()
 if not TOK:
-    raise SystemExit("拿不到凭据 —— 先在仓库里配好 git credential（见 SETUP.md 第 5 步）")
+    raise SystemExit("拿不到凭据 —— 先在仓库里配好 git credential（见 tools/README.md）")
 print("准备发布 %s（token 已取得，长度 %d，不打印内容）" % (TAG, len(TOK)))
 
 

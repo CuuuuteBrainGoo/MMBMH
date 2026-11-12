@@ -24,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -83,6 +85,7 @@ fun SettingsScreen(
         timeout: Int, retries: Int, quality: AiProviderConfig.ImageQuality, temp: Double
     ) -> Unit,
     onDelete: (Long) -> Unit,
+    onProviderEnabled: (Long, Boolean) -> Unit,
     onOpenLogs: () -> Unit,
     /** 打开 AI 配置帮助页（少爷 2026-09-27 第 3 条） */
     onOpenHelp: () -> Unit,
@@ -128,7 +131,9 @@ fun SettingsScreen(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "App 不绑定任何一家平台。你可以随时换平台、换模型，账本数据不受影响。\n" +
-                        "「主识别」负责读票；「复核」在结果有疑问时独立再看一遍（它看不到主识别的答案）。",
+                        "「主识别」负责读票；「复核」在结果有疑问时独立再看一遍（它看不到主识别的答案）。\n" +
+                        "备用或额度用完的平台可以关闭，配置和 API Key 会保留，从下次识别起不再调用。" +
+                        "多个主识别平台同时启用时，使用列表中最靠前的一个；要切换平台，请关闭排在前面的平台。",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -190,6 +195,7 @@ fun SettingsScreen(
                 ProviderCard(
                     p = p,
                     keyOk = hasKey(p.apiKeyRef),
+                    onEnabled = { onProviderEnabled(p.id, it) },
                     onEdit = { editing = p; creating = false },
                     onDelete = { onDelete(p.id) }
                 )
@@ -353,8 +359,9 @@ fun SettingsScreen(
                         }
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "AI 要不要「先想再答」。想得越多越慢，但对读票面这件事「没有帮助」 ——" +
-                                "实测快速档 3 秒、深度档 24 秒，读出来的内容长度几乎一样。\n" +
+                            "此设置支持「豆包 / 火山方舟」和 DeepSeek 官方接口，其它平台由服务端决定。\n" +
+                                "快速档请求关闭或减少思考；Kimi K3.1、GLM 5.3 等始终思考的模型只能调轻，不能关闭。" +
+                                "不保证固定秒数；模型、网络、图片大小、重试和复核都会影响总耗时。" +
                                 "读不准的票可以临时切到「深度」再试一次。",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -698,6 +705,7 @@ private fun WipeDialogs(
 private fun ProviderCard(
     p: AiProviderEntity,
     keyOk: Boolean,
+    onEnabled: (Boolean) -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -713,14 +721,25 @@ private fun ProviderCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(p.name, style = MaterialTheme.typography.titleMedium)
+                Text(p.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 IconButton(onClick = onDelete) {
                     Icon(Icons.Default.Delete, "删除", tint = MaterialTheme.colorScheme.error)
                 }
             }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (p.enabled) "已启用" else "已停用 · 配置和密钥已保留",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f)
+                )
+                Switch(
+                    checked = p.enabled,
+                    onCheckedChange = onEnabled,
+                    modifier = Modifier.semantics { contentDescription = "${p.name}启用开关" }
+                )
+            }
             Text(
-                // 火山方舟那一栏填的是接入点 ID 而不是模型名，卡片上照实显示
-                (if (AiProviderKind.from(p.provider) == AiProviderKind.DOUBAO) "接入点：" else "模型：")
+                (if (AiProviderKind.from(p.provider) == AiProviderKind.DOUBAO) "模型 / 接入点：" else "模型：")
                     + p.model.ifBlank { "未填写" },
                 style = MaterialTheme.typography.bodySmall
             )
@@ -853,8 +872,7 @@ private fun ProviderEditorDialog(
                 OutlinedTextField(
                     value = model, onValueChange = { model = it },
                     label = {
-                        // 火山方舟必须填接入点 ID（填模型名会 404），标签得跟着改，否则少爷会困惑
-                        Text(if (kind == AiProviderKind.DOUBAO) "接入点 ID" else "模型名")
+                        Text(if (kind == AiProviderKind.DOUBAO) "模型 ID / 接入点 ID" else "模型名")
                     },
                     placeholder = {
                         if (kind == AiProviderKind.DOUBAO) Text("ep-xxxxxxxxxxxxxxxx")

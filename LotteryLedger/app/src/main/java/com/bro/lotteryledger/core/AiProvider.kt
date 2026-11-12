@@ -33,7 +33,7 @@ enum class AiRole(val code: String, val display: String) {
 }
 
 /**
- * AI 的「思考强度」。映射到火山方舟的 `reasoning_effort` 参数。
+ * AI 的「思考强度」。豆包使用 reasoning_effort；DeepSeek 官方快速档使用 thinking.type=disabled。
  *
  * **这是本 App 最大的一处提速**。实测（同一张票面、同一提示词、同一接入点）：
  *
@@ -53,9 +53,9 @@ enum class AiRole(val code: String, val display: String) {
  * `xhigh` / `max` 会被平台映射回 `high`，所以不提供这两档。
  */
 enum class ThinkingLevel(val code: String, val display: String, val effort: String, val hint: String) {
-    FAST("fast", "快速", "minimal", "约 3 秒 · 默认推荐"),
-    BALANCED("balanced", "均衡", "low", "约 14 秒 · 票面模糊时用"),
-    DEEP("deep", "深度", "high", "约 24 秒 · 读不准时的最后手段");
+    FAST("fast", "快速", "minimal", "请求关闭思考 · 实际速度取决于模型和网络"),
+    BALANCED("balanced", "均衡", "low", "请求轻量思考 · 票面模糊时可试"),
+    DEEP("deep", "深度", "high", "请求深度思考 · 通常更慢");
 
     companion object {
         fun from(code: String?): ThinkingLevel =
@@ -99,8 +99,7 @@ data class AiProviderConfig(
     val timeoutSeconds: Int = 240,
     val maxRetries: Int = 1,
     /**
-     * 思考强度。当前只有火山方舟支持 `reasoning_effort`，其它平台会忽略它
-     * （见 [OpenAiCompatibleClient.buildBody]，只对豆包下发该参数）。
+     * 思考强度。当前适配豆包与 DeepSeek 官方接口，未知平台不下发专有参数。
      *
      * 这个值来自全局设置（`app_settings` 表），不是每个平台单独配。
      */
@@ -168,7 +167,10 @@ data class AiCallResult(
     val completionTokens: Int?,
     val latencyMs: Long,
     val httpStatus: Int?,
-    val error: String? = null
+    val error: String? = null,
+    /** 平台报告的思考 token 数；未返回时为 null，不能当成没有思考。 */
+    val reasoningTokens: Int? = null,
+    val attemptCount: Int = 0
 ) {
     val ok: Boolean get() = error == null && rawText != null
     val totalTokens: Int? get() = if (promptTokens != null && completionTokens != null) promptTokens + completionTokens else null
@@ -234,25 +236,9 @@ object ProviderDefaults {
     }
 
     /**
-     * 火山方舟的**接入点 ID 占位符**。
-     *
-     * **火山方舟必须填接入点 ID，而不是模型名。**
-     * 方舟是按「接入点」把请求路由到底层模型的：`model` 字段填接入点 ID 才会命中。
-     * 填模型名有时也能通（取决于该账号是否恰好开通了同名模型），但**不可靠** ——
-     * 一旦模型没在账号里开通，接口会返回 404：
-     *   `InvalidEndpointOrModel.NotFound: The model or endpoint doubao-xxx does not exist
-     *    or you do not have access to it.`
-     * 这个 404 的措辞会让人以为是「地址写错了」，实际是「模型标识不对」，极易误判。
-     *
-     * 接入点 ID 在火山方舟控制台「在线推理 → 推理接入点」里创建并复制。
-     * 在 OpenAI 兼容协议里它填在 `model` 字段 —— 与模型名走同一条路径，请求侧零改动。
-     * 代价：接入点与**创建时的区域**绑定，地址必须同区域（当前是北京区）。
-     *
-     * ⚠️ **这里绝不能写某个真实的接入点 ID**。
-     * 它会被当作预填值发给**每一个装了这个 App 的人**，等于把开发者的
-     * 账号资源标识公开出去。开发早期曾误填过一个真 ID（已移除），
-     * 用户拿它请求只会 401、花不掉钱，但这是别人的东西，不该出现在别人的包里。
-     * 一律用下面这种一眼假、又能看出格式的占位符，让用户自己去控制台复制。
+     * 接入点 ID 的公开占位符，不包含任何账号资源标识。
+     * 用户也可改填已开通模型的 Model ID，两者都原样进入请求的 model 字段。
+     * 以控制台调用示例为准；使用接入点时需与接口区域一致。
      */
     const val DOUBAO_ENDPOINT_ID = "ep-xxxxxxxxxxxxxxxx"
 
@@ -265,13 +251,11 @@ object ProviderDefaults {
         AiProviderKind.DOUBAO -> Template(
             "https://ark.cn-beijing.volces.com/api/v3",
             DOUBAO_ENDPOINT_ID,
-            "火山方舟必须填「推理接入点 ID」（ep- 开头），方舟靠它把请求路由到底层模型。" +
-                "填模型名有时候也能通，但只要那个模型没在你的账号里开通，就会报 404 " +
-                "「model or endpoint does not exist」—— 这个提示容易让人误以为是地址错了。" +
-                "接入点 ID 在方舟控制台「在线推理 → 推理接入点」里创建并复制。" +
-                "注意：接入点与区域绑定，地址要和创建接入点时选的区域一致（当前是北京区）。",
+            "填写已开通模型的 Model ID，或推理接入点 ID（ep- 开头）。" +
+                "从控制台「调用示例」复制 model 字段，不要抄页面上的展示名称。" +
+                "使用接入点时，接口地址要和接入点的区域一致（当前预填北京区）。",
             baseUrlHint = "方舟控制台页面顶部就能看到，北京区照抄即可。",
-            modelHint = "填「接入点 ID」不是模型名！在「在线推理 → 推理接入点」里创建后复制，形如 ep-xxxxxxxx。",
+            modelHint = "从控制台「调用示例」复制 model 字段，支持模型 ID 或 ep- 开头的接入点 ID；需先开通对应模型。",
             keyHint = "方舟控制台左侧「API Key 管理」里创建，形如 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx。",
             consoleUrl = "https://console.volcengine.com/ark",
             docsUrl = "https://www.volcengine.com/docs/82379/1298454"

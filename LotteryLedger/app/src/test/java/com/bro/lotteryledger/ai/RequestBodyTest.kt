@@ -24,14 +24,74 @@ class RequestBodyTest {
     private fun body(
         kind: AiProviderKind,
         model: String = "m",
-        level: ThinkingLevel = ThinkingLevel.FAST
+        level: ThinkingLevel = ThinkingLevel.FAST,
+        baseUrl: String = "https://example.com/v1"
     ): JSONObject {
         val cfg = AiProviderConfig(
             name = "t", provider = kind,
-            baseUrl = "https://example.com/v1", model = model, apiKeyRef = "r",
+            baseUrl = baseUrl, model = model, apiKeyRef = "r",
             thinkingLevel = level
         )
         return JSONObject(OpenAiCompatibleClient().buildBody(cfg, "AAAA", "读这张图"))
+    }
+
+    @Test
+    fun `方舟DeepSeekV41必须用none关闭而非minimal`() {
+        listOf("deepseek-v4-1-flash-261017", "deepseek-v4-1-flash-economy-261017").forEach { model ->
+            val b = body(AiProviderKind.DOUBAO, model)
+            assertEquals("none", b.getString("reasoning_effort"))
+        }
+    }
+
+    @Test
+    fun `方舟始终思考的模型在快速档只能调到low`() {
+        listOf("kimi-k3-1-pro-261024", "glm-5-3-flash-260828").forEach { model ->
+            val b = body(AiProviderKind.DOUBAO, model)
+            assertEquals("low", b.getString("reasoning_effort"))
+            assertFalse(b.has("thinking"))
+        }
+    }
+
+    @Test
+    fun `按兼容平台保存的官方方舟地址也必须应用思考设置`() {
+        val b = body(AiProviderKind.CUSTOM, "deepseek-v4-1-flash-261017", baseUrl = "https://ark.cn-beijing.volces.com/api/v3")
+        assertEquals("none", b.getString("reasoning_effort"))
+    }
+
+    @Test
+    fun `连通测试和正式识别的思考参数必须一致`() {
+        val url = "https://api.deepseek.com/chat/completions"
+        ThinkingLevel.entries.forEach { level ->
+            val recognition = body(AiProviderKind.OPENAI, "deepseek-flash", level, url)
+            val probe = JSONObject(ConnectivityProbe.buildProbeBody("deepseek-flash", false, url, AiProviderKind.OPENAI, level))
+            assertEquals(recognition.getJSONObject("thinking").getString("type"), probe.getJSONObject("thinking").getString("type"))
+            assertEquals(recognition.optString("reasoning_effort"), probe.optString("reasoning_effort"))
+        }
+    }
+
+    @Test
+    fun `DeepSeek官方快速档必须关闭默认思考而非只传minimal`() {
+        val b = body(AiProviderKind.OPENAI, "deepseek-flash", baseUrl = "https://api.deepseek.com/chat/completions")
+        assertEquals("disabled", b.getJSONObject("thinking").getString("type"))
+        assertFalse(b.has("reasoning_effort"))
+    }
+
+    @Test
+    fun `DeepSeek官方均衡和深度档显式开启思考`() {
+        listOf(ThinkingLevel.BALANCED to "low", ThinkingLevel.DEEP to "high").forEach { (level, effort) ->
+            val b = body(AiProviderKind.CUSTOM, "deepseek-flash", level, "https://api.deepseek.com/v1")
+            assertEquals("enabled", b.getJSONObject("thinking").getString("type"))
+            assertEquals(effort, b.getString("reasoning_effort"))
+        }
+    }
+
+    @Test
+    fun `不能只凭DeepSeek模型名或相似域名给未知服务传thinking`() {
+        listOf("https://api.deepseek.com.example.com/v1", "https://example.com/api.deepseek.com/v1").forEach { url ->
+            val b = body(AiProviderKind.OPENAI, "deepseek-flash", baseUrl = url)
+            assertFalse(b.has("thinking"))
+            assertFalse(b.has("reasoning_effort"))
+        }
     }
 
     @Test

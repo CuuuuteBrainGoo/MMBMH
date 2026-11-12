@@ -17,9 +17,21 @@ import glob as _glob
 _cands = _glob.glob(os.path.join(APK_DIR, "LotteryLedger-*-debug-signed.apk"))
 if _cands:
     APK = max(_cands, key=os.path.getmtime)
+if len(sys.argv) > 1:
+    APK = os.path.abspath(sys.argv[1])
 
 NEEDLES = {
-    # ---- 本轮新增（v1.4.0：少爷 2026-09-27 第 1~4 条）----
+    # v1.7.0：开关、模型专属思考参数与耗时记录。
+    "平台开关-保存入口": b"setProviderEnabled",
+    "平台开关-编辑保留状态": b"updatePreservingEnabled",
+    "平台开关-停用状态文案": "已停用 · 配置和密钥已保留".encode(),
+    "平台开关-请求前拦截": "平台已停用，请先在设置中启用".encode(),
+    "思考-共用适配规则": b"ThinkingRequestPolicy",
+    "思考-DeepSeek官方域名": b"api.deepseek.com",
+    "思考-火山DeepSeekV41适配": b"deepseek-v4-1-",
+    "耗时-请求阶段类": b"AiRequestTiming",
+    "耗时-等待响应文案": "等待响应=".encode(),
+    # ---- 本轮新增（v1.4.0：用户 2026-09-27 第 1~4 条）----
     "期号归一化类": b"IssueNormalizer",
     "期号归一化日志": "期号已归一化".encode(),
     "编号归位类": b"IdentifierSplitter",
@@ -34,7 +46,7 @@ NEEDLES = {
     "彩蛋-明确是玩笑": "这只是个玩笑".encode(),
     "彩蛋-注明票状态不变": "账本上的状态一个字都没变".encode(),
     # v1.4.0 顺带修的：界面文案里的 markdown 星号（Compose 不解析，会原样显示）
-    "文案-中文引号强调": "「推理接入点 ID」".encode(),
+    "文案-模型与接入点说明": "模型 ID / 接入点 ID".encode(),
     # ---- v1.6.0：彩票展示编号 + 首页滚动位置保留 ----
     "编号-核心类": b"TicketCode",
     "编号-计算入口": b"codeOf",
@@ -110,7 +122,7 @@ NEEDLES = {
     "日志-基准文件": ".last_sweep".encode(),
     "日志-清理记录": "已按周清理日志".encode(),
     # 版本号不在这里查 —— 见文件末尾的说明（短版本号字符串会被第三方库命中的假阳性）
-    # ---- 上一轮（v1.2.0：少爷提的 7 条）----
+    # ---- 上一轮（v1.2.0：用户提的 7 条）----
     "API Key 掩码类": b"ApiKeyMask",
     "掩码判定方法": b"isUnchangedMask",
     "冲突翻译类": b"ConflictText",
@@ -135,8 +147,8 @@ NEEDLES = {
     "ConnectivityProbe": b"ConnectivityProbe",
     "FailureText": b"FailureText",
     # 用前缀 "ep-m-" 做锚点即可 —— 不要写真实接入点 ID！
-    # （写真实 ID 会把少爷的账号资源固化进工具脚本，且可能被密钥扫描拦）
-    "接入点前缀 (ep-)": b"ep-m-",
+    # （写真实 ID 会把用户的账号资源固化进工具脚本，且可能被密钥扫描拦）
+    "接入点占位符 (ep-)": b"ep-xxxxxxxxxxxxxxxx",
     "探针图尺寸常量": b"KNOWN_MIN_IMAGE_SIDE",
     "对奖引擎 PrizeRules": b"PrizeRules",
     "兑奖截止日": b"RedemptionDeadline",
@@ -246,7 +258,7 @@ NEEDLES = {
     "日志-分诊": "分诊 → 可直接入账 ".encode(),
     "toast-已直接入账": "已直接入账 ".encode(),
     # ---- v1.6.3：单张扫描也走 BatchTriage 分诊（识别无异常直接入账）----
-    # 少爷问「单张扫的干净票为什么不直接入账」，根因是判据只接了批量一个消费者。
+    # 用户问「单张扫的干净票为什么不直接入账」，根因是判据只接了批量一个消费者。
     # 本版把单张也接上 —— 下面四个符号就是这次接线的全部载体。
     "单张入账-辅助函数": b"commitCleanScan",
     "单张入账-提示生成": b"describeForToast",
@@ -256,6 +268,8 @@ NEEDLES = {
 
 # 这些**必须不在**包里 —— 测试类混进正式包会白白增大体积，也说明构建配置有问题
 MUST_BE_ABSENT = {
+    "RecognitionClientTest": b"RecognitionClientTest",
+    "ProviderUpdateTest": b"ProviderUpdateTest",
     "DrawTimeTest": b"DrawTimeTest",
     "PrizeRulesTest": b"PrizeRulesTest",
     "RequestBodyTest": b"RequestBodyTest",
@@ -358,3 +372,4 @@ for m in leaked:
 
 if not missing and not leaked:
     print("全部通过 ✅")
+sys.exit(1 if missing or leaked else 0)

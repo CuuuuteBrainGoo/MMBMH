@@ -1,36 +1,4 @@
-"""编译两个变体 + 打包 + 签名，一气呵成。
-
-## 为什么 build 步骤要带重试
-
-release 的 `dexBuilderRelease` 偶发 `java.nio.file.AccessDeniedException`，
-报的是某个 `ComposableSingletons$XxxKt$lambda-N$1.dex` 写不进去。
-**这不是代码问题也不是配置问题** —— 是刚生成的 dex 被 Windows 上的
-杀毒软件实时扫描短暂占住了文件句柄。实测重跑一次必过（已经中了两次）。
-
-## ⚠️ 判断重试时必须读结果文件，不能只看 stdout
-
-`run_build.py` 把 gradle 的完整输出写进结果文件（debug_result.txt 等），
-**stdout 上只有几行摘要**。所以只看 stdout 的话，
-`AccessDeniedException` 这个关键字根本匹配不到 —— 重试逻辑形同虚设。
-
-## 只对「文件占用」重试
-
-编译错误、测试失败不重试 —— 那些重跑一万次也一样，只是浪费三分钟。
-
-## 版本号守卫（两道）
-
-**第一道：有没有涨**（对照 `BUILD/.last_pack_version`）。
-少爷 2026-09-27 指出：连着迭代七八个版本，APK 里的版本号一直停在 1.1.0。
-现在版本号只在 `LotteryLedger/version.properties` 里定义一处。
-
-**第二道：4 处是不是一致**（调 `_release_guard.py`）。
-2026-09-28 审计发现：`version.properties` 已到 1.6.0，但 `.gitignore` 的
-APK 放行行还停在 1.5.0、README 下载表也还是 1.5.0 —— 结果是
-**推上 GitHub 的会是旧包**。所以把一致性校验焊进打包流程，
-**不一致直接中断打包**（不要等到推完才发现）。
-
-用法：python _pack.py
-"""
+"""构建 debug/release，核对版本，整理并签名安装包。仅对临时文件占用错误重试一次。"""
 import os
 import subprocess
 

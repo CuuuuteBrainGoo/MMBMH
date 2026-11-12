@@ -134,16 +134,16 @@ fun HelpScreen(onBack: () -> Unit) {
             item {
                 SectionCard(title = "⚠️ 用豆包？先看这条", accent = LedgerColors.Warn) {
                     Paragraph(
-                        "火山方舟**不能直接填模型名**，必须先在控制台创建「推理接入点」，" +
-                            "把那个 ep- 开头的 ID 填进「模型名」这一格。"
+                        "火山方舟支持填写已开通模型的 Model ID，也支持 ep- 开头的推理接入点 ID。" +
+                            "请复制控制台「调用示例」里的 model 字段，不要抄列表中的展示名称。"
                     )
                     Paragraph(
                         "流程：登录方舟控制台 → 左侧「在线推理」→「推理接入点」→ 创建 → " +
                             "选择一个视觉模型（如 doubao-seed 系列）→ 创建好后复制那串 ep- 开头的 ID。"
                     )
                     Paragraph(
-                        "如果填了模型名，接口会返回 404 说「model or endpoint does not exist」——" +
-                            "这个提示很容易被误读成「地址填错了」，其实是「该填接入点 ID」。"
+                        "如果返回 404「model or endpoint does not exist」，请检查模型是否已开通、" +
+                            "模型或接入点 ID 是否正确，以及接口地址与接入点是否属于同一区域。"
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = {

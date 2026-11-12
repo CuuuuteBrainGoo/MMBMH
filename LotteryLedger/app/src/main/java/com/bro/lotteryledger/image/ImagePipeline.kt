@@ -9,6 +9,7 @@ import android.util.Base64
 import androidx.exifinterface.media.ExifInterface
 import com.bro.lotteryledger.core.AiProviderConfig
 import com.bro.lotteryledger.core.ImageStats
+import com.bro.lotteryledger.core.LedgerLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -64,10 +65,13 @@ class ImagePipeline(private val context: Context) {
      */
     suspend fun prepare(uri: Uri, quality: AiProviderConfig.ImageQuality): Prepared? =
         withContext(Dispatchers.IO) {
+            val started = System.nanoTime()
             val original = decodeSampled(uri) ?: return@withContext null
             val rotated = applyExifRotation(uri, original)
             val scaled = scaleDown(rotated, quality.maxEdge)
-            writeCleanJpeg(scaled, quality.jpegQuality)
+            writeCleanJpeg(scaled, quality.jpegQuality).also {
+                LedgerLog.i("Scan", "图片准备=${(System.nanoTime() - started) / 1_000_000}ms")
+            }
         }
 
     /**
@@ -75,8 +79,11 @@ class ImagePipeline(private val context: Context) {
      */
     suspend fun prepare(bitmap: Bitmap, quality: AiProviderConfig.ImageQuality): Prepared? =
         withContext(Dispatchers.IO) {
+            val started = System.nanoTime()
             val scaled = scaleDown(bitmap, quality.maxEdge)
-            writeCleanJpeg(scaled, quality.jpegQuality)
+            writeCleanJpeg(scaled, quality.jpegQuality).also {
+                LedgerLog.i("Scan", "图片准备=${(System.nanoTime() - started) / 1_000_000}ms")
+            }
         }
 
     /**

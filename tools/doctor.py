@@ -1,16 +1,5 @@
 # -*- coding: utf-8 -*-
-"""环境体检 —— 换机器 / 重装系统后**第一件事**跑这个。
-
-    python tools/doctor.py
-
-它会逐项检查：仓库结构、编译工具链、签名密钥（含指纹比对）、git 远端。
-全绿 = 可以直接 `python tools/_build_and_test.py`。
-
-**为什么密钥要比对指纹**：
-Android 只认真实签名。换了一把新密钥打出来的包**装不上旧包**
-（只能卸载重装，账本数据全丢）。而"文件存在"不代表"是那一把" ——
-所以这里比 SHA1，不放心的文件当场挑出来。
-"""
+"""检查仓库、构建工具和安装包签名证书。不会生成新的签名文件。"""
 import os
 import re
 import subprocess
@@ -80,7 +69,6 @@ def main():
     path_item("app 目录", os.path.join(P.SRC_WORK, "app"))
     path_item("版本号文件", P.VERSION_FILE)
     path_item("APK 目录", P.APK_DIR)
-    path_item("验收清单", P.CHECKLIST)
 
     if os.path.exists(P.VERSION_FILE):
         for ln in open(P.VERSION_FILE, encoding="utf-8"):
@@ -100,7 +88,7 @@ def main():
     if not os.path.exists(P.KEYSTORE):
         line(NO, "debug.keystore", "缺失 -> " + P.KEYSTORE)
         print("         这不是「重新生成一个就行」的东西：换密钥 = 新包装不上旧包 =")
-        print("         只能卸载重装 = 账本数据全丢。去备份邮件里把它取出来放回上面的路径。")
+        print("         只能卸载重装 = 账本数据全丢。请通过 MMBMH_KEYSTORE 指定与旧版相同的签名文件。")
     else:
         line(OK, "debug.keystore", P.KEYSTORE)
         got, err = keystore_sha1()
@@ -131,7 +119,7 @@ def main():
 
     print("\n" + "=" * 70)
     if fails:
-        print("  结论：%d 项不合格 —— 按 SETUP.md 补齐再动手。" % fails)
+        print("  结论：%d 项不合格 —— 按 tools/README.md 补齐再动手。" % fails)
         if warns:
             print("       另有 %d 项提醒。" % warns)
         print("=" * 70)
